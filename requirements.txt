@@ -1,0 +1,27 @@
+# JobHunterAI — Python dependencies
+# Install: pip install -r requirements.txt
+# Python: 3.10+  |  macOS ARM64 (M1/M2/M3/M4/M5) native ✅
+
+# ── Core agent stack ──────────────────────────────────────────────
+langgraph>=0.3.0
+langchain-anthropic>=0.3.0
+langchain-core>=0.3.0
+langsmith>=0.2.0
+
+# ── LLM + validation ─────────────────────────────────────────────
+anthropic>=0.40.0
+pydantic>=2.5.0
+
+# ── Search ───────────────────────────────────────────────────────
+tavily-python>=0.3.0
+
+# ── Utilities ─────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+
+# ── API server (FastAPI + SQLite) ─────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+sqlmodel>=0.0.19
+sse-starlette>=2.1.0
+slowapi>=0.1.9
+aiofiles>=23.2.1

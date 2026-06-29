@@ -1,0 +1,216 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Brand colors */
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-warm: var(--surface-warm);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-ai-accent: var(--ai-accent);
+  --color-ai-light: var(--ai-light);
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  /* Shadcn aliases */
+  --color-foreground: var(--text-primary);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text-primary);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text-primary);
+  --color-secondary: var(--surface-warm);
+  --color-secondary-foreground: var(--text-secondary);
+  --color-muted: var(--surface-warm);
+  --color-muted-foreground: var(--text-muted);
+  --color-accent: var(--primary-light);
+  --color-accent-foreground: var(--primary);
+  --color-destructive: #E85A4A;
+  --color-input: var(--border);
+  --color-ring: var(--primary);
+
+  /* Sidebar colors */
+  --color-sidebar-ring: var(--primary);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-accent-foreground: var(--primary);
+  --color-sidebar-accent: var(--primary-light);
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-primary: var(--primary);
+  --color-sidebar-foreground: var(--text-secondary);
+  --color-sidebar: var(--surface-warm);
+
+  /* Chart colors */
+  --color-chart-1: var(--primary);
+  --color-chart-2: var(--success);
+  --color-chart-3: var(--ai-accent);
+  --color-chart-4: var(--warning);
+  --color-chart-5: var(--text-muted);
+
+  /* Fonts */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Border radius */
+  --radius: 0.75rem;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Animations */
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-slide-in: slide-in 0.3s ease-out;
+  --animate-fade-in: fade-in 0.2s ease-out;
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(124, 92, 191, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(124, 92, 191, 0);
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+:root {
+  /* Brand palette */
+  --background: #FDFAF6;
+  --surface: #FFFFFF;
+  --surface-warm: #FAF7F2;
+  --primary: #E8734A;
+  --primary-hover: #D4623A;
+  --primary-light: #FDF0EB;
+  --primary-foreground: #ffffff;
+  --success: #5B8B6E;
+  --success-light: #EBF4EF;
+  --ai-accent: #7C5CBF;
+  --ai-light: #F0EBF8;
+  --warning: #E8A23A;
+  --warning-light: #FDF4E3;
+
+  /* Text */
+  --text-primary: #1C1410;
+  --text-secondary: #6B5D52;
+  --text-muted: #9B8B78;
+
+  /* Borders */
+  --border: #EDE8E0;
+  --border-strong: #D4CFC8;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 4px rgba(120, 80, 40, 0.06);
+  --shadow-md: 0 4px 16px rgba(120, 80, 40, 0.08);
+  --shadow-lg: 0 8px 32px rgba(120, 80, 40, 0.12);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: "Inter", system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--surface-warm);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  /* Selection color */
+  ::selection {
+    background-color: var(--primary-light);
+    color: var(--primary);
+  }
+}
+
+/* Utility classes for design system */
+.font-display {
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+.font-mono-code {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.shadow-brand-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-brand-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-brand-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Pipeline node glow animation */
+.node-running {
+  animation: pulse-glow 2s ease-in-out infinite;
+  border-color: var(--ai-accent) !important;
+}
+
+/* Log terminal styles */
+.log-terminal {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  background: #1C1A18;
+  color: #9B8B78;
+}
+
+.log-line-info { color: #9B8B78; }
+.log-line-warn { color: #E8A23A; }
+.log-line-success { color: #5B8B6E; }
+.log-line-error { color: #E85A4A; }

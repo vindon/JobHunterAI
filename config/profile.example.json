@@ -1,0 +1,109 @@
+{
+  "_comment": "Copy this file to profile.json and fill in YOUR details.",
+  "_note": "profile.json is gitignored — your personal data stays local.",
+
+  "name": "Alex Chen",
+  "email": "alex@example.com",
+
+  "_seniority_note": "Sets the minimum seniority for the rank agent to score against. Jobs clearly below this level receive a -2 score penalty.",
+  "min_seniority": "Senior Manager",
+
+  "_roles_note": "The AI scores every job against these titles. List your actual target roles, most specific first.",
+  "target_roles": [
+    "Head of AI",
+    "Director of AI Strategy",
+    "AI Transformation Lead",
+    "VP AI Strategy",
+    "Chief AI Officer",
+    "AI Programme Manager",
+    "Senior AI Consultant",
+    "Agentic AI Consultant",
+    "CX AI Automation Lead",
+    "Digital Transformation Director",
+    "AI Advisor",
+    "Principal AI Strategist"
+  ],
+
+  "_countries_note": "Must match country names used in job listings. Supported: USA, UK, Australia, New Zealand, Canada, India, Singapore, Germany, Netherlands, Global.",
+  "target_countries": ["USA", "UK", "Australia", "New Zealand"],
+
+  "_skills_note": "Be specific — these exact terms are compared against job descriptions during ranking.",
+  "key_skills": [
+    "Agentic AI",
+    "LangGraph",
+    "Generative AI",
+    "AI Governance",
+    "LLM Strategy",
+    "AI Roadmap",
+    "CX Automation",
+    "Contact Centre AI",
+    "Call Deflection",
+    "RAG",
+    "Multi-agent systems",
+    "Prompt Engineering",
+    "Stakeholder Management",
+    "Benefits Realization",
+    "Product Strategy"
+  ],
+
+  "_metrics_note": "These metrics help the rank agent understand your impact. Fill in YOUR real numbers — they make scoring more accurate.",
+  "canonical_metrics": {
+    "cost_savings": "$40M+ annual savings delivered",
+    "deflection_rate": "45% call deflection through AI automation",
+    "nps_improvement": "+22 NPS improvement post-AI deployment",
+    "team_size": "Led teams of up to 25 across AI/CX programs",
+    "note": "Replace with your own measurable achievements"
+  },
+
+  "_sheet_note": "This was used for Google Sheets output in earlier versions. Currently ignored — output goes to CSV.",
+  "sheet_name": "JobHunterAI — Remote Jobs Tracker",
+
+  "_queries_note": "Each query runs separately via Tavily. The 7-day freshness filter is enforced at the API level. Be specific — include job title, remote, and year for best results.",
+  "search_queries": [
+    "site:seek.com.au \"head of AI\" OR \"director of AI\" OR \"AI strategy\" remote contract 2026",
+    "site:nz.seek.com \"AI automation\" OR \"AI strategy\" senior director remote 2026",
+    "site:reed.co.uk \"AI transformation\" OR \"AI consultant\" OR \"agentic AI\" remote contract 2026",
+    "site:uk.indeed.com \"AI strategy\" OR \"CX automation\" director senior remote 2026",
+    "site:indeed.com \"AI transformation\" OR \"agentic AI\" director senior remote contract 2026",
+    "\"head of AI\" OR \"director AI\" OR \"VP AI\" remote \"work from anywhere\" OR \"globally remote\" 2026",
+    "\"AI strategy consultant\" OR \"CX AI automation\" director senior remote globally 2026",
+    "site:jobs.gartner.com AI strategy director remote 2026",
+    "\"agentic AI\" OR \"AI automation\" consultant senior director remote contract 2026",
+    "site:linkedin.com/jobs \"AI transformation\" OR \"AI strategy\" director remote globally 2026",
+    "site:remoterocketship.com \"AI consultant\" OR \"head of AI\" senior remote 2026"
+  ],
+
+  "_broad_queries_note": "These are used as a fallback if the main queries return fewer than 5 total results. Keep them broader.",
+  "broad_search_queries": [
+    "\"AI consultant\" remote director senior 2026",
+    "\"head of AI\" remote contract 2026",
+    "\"AI strategy\" director senior remote globally 2026"
+  ],
+
+  "_exclude_note": "Any job whose title contains one of these strings (case-insensitive) is rejected by the rank agent before scoring.",
+  "exclude_keywords": [
+    "junior",
+    "entry level",
+    "intern",
+    "graduate",
+    "no experience required",
+    "on-site only",
+    "local only",
+    "security clearance required",
+    "US citizens only",
+    "MLM",
+    "commission only"
+  ],
+
+  "_threshold_note": "Jobs scoring below this number are not saved to the tracker. Range: 0-10. Default 5 keeps the middle ground.",
+  "fit_score_threshold": 5,
+
+  "_max_results_note": "Tavily results returned per query. Higher = more raw results but slower and uses more Tavily quota. Default 5 is a good balance.",
+  "max_results_per_query": 5,
+
+  "_days_note": "Freshness window. Tavily enforces this at the query level. 7 means only jobs posted in the last week.",
+  "days_back": 7,
+
+  "_model_note": "Ollama model for parse and rank nodes. Must be installed via 'ollama pull <model>'. Recommended: mistral:7b. Alternatives: qwen2.5:7b, llama3.2:3b.",
+  "ollama_model": "mistral:7b"
+}
