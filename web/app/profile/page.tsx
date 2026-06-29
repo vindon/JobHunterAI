@@ -33,8 +33,8 @@ const SENIORITY_LEVELS = [
 const PRESET_COUNTRIES: { code: string; name: string; flag: string }[] = [
   { code: "AU", name: "Australia", flag: "🇦🇺" },
   { code: "NZ", name: "New Zealand", flag: "🇳🇿" },
-  { code: "GB", name: "United Kingdom", flag: "🇬🇧" },
-  { code: "US", name: "United States", flag: "🇺🇸" },
+  { code: "GB", name: "UK", flag: "🇬🇧" },
+  { code: "US", name: "USA", flag: "🇺🇸" },
   { code: "CA", name: "Canada", flag: "🇨🇦" },
   { code: "IN", name: "India", flag: "🇮🇳" },
   { code: "DE", name: "Germany", flag: "🇩🇪" },

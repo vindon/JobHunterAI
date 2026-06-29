@@ -265,7 +265,7 @@ export default function RunAgentPage() {
       const enabledQueries = settings?.search_queries
         .filter((_, i) => !disabledQueryIndices.has(i))
         .map((q) => q.query)
-      return startRun({ dry_run: dryRun, queries: enabledQueries })
+      return startRun({ dry_run: dryRun, queries_override: enabledQueries })
     },
     onSuccess: (run) => {
       setRunId(run.run_id)
@@ -278,7 +278,7 @@ export default function RunAgentPage() {
     },
   })
 
-  const isRunning = isConnected || activeRun?.status === "running"
+  const isRunning = isConnected || activeRun?.active === true
   const queries = settings?.search_queries ?? []
 
   function toggleQuery(idx: number) {

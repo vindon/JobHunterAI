@@ -5,8 +5,10 @@ Prefix: /api/jobs
 
 Endpoints
 ---------
-  GET    /             List jobs with filtering, sorting, search
+  GET    /             List jobs with filtering, sorting, search, pagination
   GET    /stats        Aggregate counts by status, country, score bucket
+  GET    /export       Download all jobs as CSV
+  DELETE /all          Permanently delete every job
   GET    /{id}         Single job by primary key
   PATCH  /{id}         Update status and/or notes
   DELETE /{id}         Soft-delete (set status to ❌ Pass) or hard-delete
@@ -14,10 +16,13 @@ Endpoints
 
 from __future__ import annotations
 
+import csv
+import io
 import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -193,6 +198,56 @@ async def get_stats(session: Session = Depends(get_session)) -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════
+# GET /export
+# ══════════════════════════════════════════════════════════════════
+
+
+@router.get("/export")
+async def export_jobs_csv(session: Session = Depends(get_session)) -> StreamingResponse:
+    """Export all jobs as a UTF-8 CSV file."""
+    try:
+        jobs = session.exec(select(Job)).all()
+        output = io.StringIO()
+        writer = csv.writer(output)
+        fields = ["id", "role", "company", "country", "job_type", "remote_scope",
+                  "source_portal", "date_found", "urgency", "fit_score", "status",
+                  "salary_hint", "fit_notes", "direct_link", "notes", "created_at"]
+        writer.writerow(fields)
+        for job in jobs:
+            writer.writerow([getattr(job, f, "") for f in fields])
+        output.seek(0)
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=jobhunter-export.csv"},
+        )
+    except Exception as exc:
+        log.error(f"Error exporting jobs: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Export failed")
+
+
+# ══════════════════════════════════════════════════════════════════
+# DELETE /all
+# ══════════════════════════════════════════════════════════════════
+
+
+@router.delete("/all")
+async def delete_all_jobs(session: Session = Depends(get_session)) -> dict:
+    """Permanently delete every job record in the database."""
+    try:
+        jobs = session.exec(select(Job)).all()
+        count = len(jobs)
+        for job in jobs:
+            session.delete(job)
+        session.commit()
+        log.warning(f"All {count} jobs permanently deleted")
+        return {"deleted": count}
+    except Exception as exc:
+        log.error(f"Error deleting all jobs: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to delete all jobs")
+
+
+# ══════════════════════════════════════════════════════════════════
 # GET /{id}
 # ══════════════════════════════════════════════════════════════════
 
@@ -291,3 +346,5 @@ async def delete_job(
     except Exception as exc:
         log.error(f"Error deleting job {job_id}: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to delete job")
+
+
