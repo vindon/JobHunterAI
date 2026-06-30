@@ -3,13 +3,6 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
-import {
-  GripVertical,
-  Trash2,
-  Plus,
-  Download,
-  AlertTriangle,
-} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -114,10 +107,10 @@ function SortableQueryItem({
       <span
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing"
+        className="cursor-grab active:cursor-grabbing select-none text-sm leading-none"
         style={{ color: "var(--text-muted)" }}
       >
-        <GripVertical size={16} />
+        ⠿
       </span>
       <span className="flex-1 text-sm" style={{ color: "var(--text-primary)" }}>
         {query}
@@ -127,7 +120,7 @@ function SortableQueryItem({
         className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
         style={{ color: "var(--text-muted)" }}
       >
-        <Trash2 size={14} />
+        ×
       </button>
     </div>
   )
@@ -284,7 +277,7 @@ export default function SettingsPage() {
                           border: "1px solid var(--border)",
                         }}
                       >
-                        <GripVertical size={16} style={{ color: "var(--text-muted)", cursor: "grab" }} />
+                        <span className="text-sm leading-none select-none" style={{ color: "var(--text-muted)", cursor: "grab" }}>⠿</span>
                         <span className="flex-1 text-sm" style={{ color: "var(--text-primary)" }}>
                           {q.query}
                         </span>
@@ -303,7 +296,7 @@ export default function SettingsPage() {
                           className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
                           style={{ color: "var(--text-muted)" }}
                         >
-                          <Trash2 size={14} />
+                          ×
                         </button>
                       </div>
                     ))}
@@ -328,7 +321,6 @@ export default function SettingsPage() {
                   onClick={() => newQuery.trim() && addQueryMutation.mutate(newQuery.trim())}
                   style={{ background: "var(--primary)", color: "#fff" }}
                 >
-                  <Plus size={16} className="mr-1.5" />
                   Add
                 </Button>
               </div>
@@ -461,7 +453,6 @@ export default function SettingsPage() {
                   className="gap-2 shrink-0"
                   style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
                 >
-                  <Download size={15} />
                   Export CSV
                 </Button>
               </div>
@@ -475,8 +466,7 @@ export default function SettingsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <AlertTriangle size={16} style={{ color: "#E85A4A" }} />
-                    <h3 className="font-display text-base" style={{ color: "#C53030", fontWeight: 700 }}>
+                    <h3 className="font-bold text-sm" style={{ color: "#C53030", letterSpacing: "-0.02em" }}>
                       Clear All Jobs
                     </h3>
                   </div>
@@ -489,7 +479,6 @@ export default function SettingsPage() {
                   className="gap-2 shrink-0"
                   style={{ background: "#E85A4A", color: "#fff" }}
                 >
-                  <Trash2 size={15} />
                   Clear All
                 </Button>
               </div>
@@ -502,8 +491,7 @@ export default function SettingsPage() {
       <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <DialogContent style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
-              <AlertTriangle size={18} style={{ color: "#E85A4A" }} />
+            <DialogTitle style={{ color: "var(--text-primary)" }}>
               Clear all jobs?
             </DialogTitle>
             <DialogDescription style={{ color: "var(--text-muted)" }}>

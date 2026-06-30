@@ -3,17 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-  Search,
-  LayoutGrid,
-  Table,
-  Download,
-  ExternalLink,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-} from "lucide-react"
+import { X } from "lucide-react"
 import { format } from "date-fns"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -49,6 +39,15 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core"
 import { cn } from "@/lib/utils"
+
+const STATUS_LABELS: Record<string, string> = {
+  "🆕 New": "New",
+  "⏳ Reviewing": "Reviewing",
+  "📤 Applied": "Applied",
+  "🎤 Interview": "Interview",
+  "✅ Offer": "Offer",
+  "❌ Pass": "Pass",
+}
 
 const SCORE_FILTERS = [
   { label: "Any", value: 0 },
@@ -161,14 +160,11 @@ function JobDetailSheet({
           {job.fit_notes && (
             <div
               className="rounded-xl p-4"
-              style={{ background: "var(--ai-light)", border: "1px solid rgba(79,70,229,0.2)" }}
+              style={{ background: "var(--ai-light)", border: "1px solid var(--primary-border)" }}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={14} style={{ color: "var(--ai-accent)" }} />
-                <span className="text-xs font-semibold" style={{ color: "var(--ai-accent)" }}>
-                  AI Reasoning
-                </span>
-              </div>
+              <p className="text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: "var(--primary)", letterSpacing: "0.07em" }}>
+                AI Reasoning
+              </p>
               <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                 {job.fit_notes}
               </p>
@@ -210,7 +206,7 @@ function JobDetailSheet({
                       : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
                   )}
                 >
-                  {s}
+                  {STATUS_LABELS[s] ?? s}
                 </button>
               ))}
             </div>
@@ -241,11 +237,10 @@ function JobDetailSheet({
               <a href={job.direct_link} target="_blank" rel="noopener noreferrer" className="flex-1">
                 <Button
                   variant="outline"
-                  className="w-full gap-2"
+                  className="w-full"
                   style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
                 >
-                  <ExternalLink size={14} />
-                  Open Listing
+                  Open Listing ↗
                 </Button>
               </a>
             )}
@@ -313,7 +308,7 @@ function TableView({
                         className="h-1.5 rounded-full absolute left-0 top-0"
                         style={{
                           width: `${(job.fit_score / 10) * 100}%`,
-                          background: job.fit_score >= 8 ? "#E8734A" : job.fit_score >= 6 ? "#5B8B6E" : "#E8A23A",
+                          background: job.fit_score >= 8 ? "#5B5BD6" : job.fit_score >= 6 ? "#17A34A" : "#C47D16",
                         }}
                       />
                     </div>
@@ -351,7 +346,7 @@ function TableView({
                 </td>
                 <td className="px-4 py-3">
                   <span className={cn("text-xs px-2 py-1 rounded-md border font-medium", statusColor)}>
-                    {job.status}
+                    {STATUS_LABELS[job.status as JobStatus] ?? job.status}
                   </span>
                 </td>
                 <td className="px-4 py-3">
@@ -361,8 +356,10 @@ function TableView({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
+                      className="text-xs font-medium"
+                      style={{ color: "var(--text-muted)" }}
                     >
-                      <ExternalLink size={14} style={{ color: "var(--text-muted)" }} />
+                      ↗
                     </a>
                   )}
                 </td>
@@ -416,10 +413,10 @@ function KanbanCard({ job, onSelect }: { job: Job; onSelect: (job: Job) => void 
       </div>
       {job.urgency === "🔥 URGENT" && (
         <span
-          className="text-xs mt-1.5 inline-block px-1.5 py-0.5 rounded-md"
-          style={{ background: "var(--primary-light)", color: "var(--primary)" }}
+          className="text-[10px] mt-1.5 inline-block px-2 py-0.5 rounded-md font-semibold tracking-wide uppercase"
+          style={{ background: "var(--primary-light)", color: "var(--primary)", letterSpacing: "0.05em" }}
         >
-          🔥 Urgent
+          Urgent
         </span>
       )}
     </div>
@@ -452,7 +449,7 @@ function KanbanColumn({
       <div className="px-3 py-2.5" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="flex items-center justify-between">
           <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-md border", color)}>
-            {status}
+            {STATUS_LABELS[status] ?? status}
           </span>
           <span
             className="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center"
@@ -602,33 +599,29 @@ function JobsBoardInner() {
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div
-            className="flex rounded-lg p-0.5"
-            style={{ background: "var(--border)" }}
-          >
+          <div className="flex rounded-lg p-0.5" style={{ background: "var(--border)" }}>
             {(["table", "kanban"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className="p-1.5 rounded-md transition-all"
+                className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
                 style={{
                   background: view === v ? "var(--surface)" : "transparent",
                   color: view === v ? "var(--text-primary)" : "var(--text-muted)",
                   boxShadow: view === v ? "var(--shadow-sm)" : "none",
                 }}
               >
-                {v === "table" ? <Table size={15} /> : <LayoutGrid size={15} />}
+                {v === "table" ? "Table" : "Board"}
               </button>
             ))}
           </div>
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 text-xs"
+            className="text-xs"
             onClick={handleExport}
             style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
           >
-            <Download size={13} />
             Export
           </Button>
         </div>
@@ -639,16 +632,13 @@ function JobsBoardInner() {
         className="px-6 py-3 flex items-center gap-3 flex-wrap shrink-0"
         style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)" }}
       >
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
-          <Input
-            placeholder="Search jobs..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            className="pl-9 h-8 w-48 text-sm"
-            style={{ borderColor: "var(--border)", background: "var(--surface-warm)" }}
-          />
-        </div>
+        <Input
+          placeholder="Search jobs..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+          className="h-8 w-48 text-sm"
+          style={{ borderColor: "var(--border)", background: "var(--surface-warm)" }}
+        />
 
         <Select value={countryFilter || "all"} onValueChange={(v) => { setCountryFilter((v ?? "all") === "all" ? "" : (v ?? "")); setPage(1) }}>
           <SelectTrigger className="h-8 w-36 text-xs" style={{ borderColor: "var(--border)" }}>
@@ -700,7 +690,7 @@ function JobsBoardInner() {
               className={cn("h-8 px-3 rounded-lg text-xs font-medium transition-all border", STATUS_COLORS[s])}
               style={{ opacity: statusFilter && statusFilter !== s ? 0.4 : 1 }}
             >
-              {s}
+              {STATUS_LABELS[s] ?? s}
             </button>
           ))}
         </div>
@@ -732,12 +722,11 @@ function JobsBoardInner() {
               </div>
             ) : jobs.length === 0 ? (
               <div className="py-20 text-center">
-                <div className="text-5xl mb-4">📭</div>
-                <p className="font-display text-lg font-semibold" style={{ color: "var(--text-secondary)" }}>
+                <p className="font-semibold text-base mb-1" style={{ color: "var(--text-secondary)", letterSpacing: "-0.02em" }}>
                   No jobs match your filters
                 </p>
                 <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                  Try adjusting filters or run the agent to find more
+                  Try adjusting filters or start a new search
                 </p>
               </div>
             ) : (
@@ -747,24 +736,14 @@ function JobsBoardInner() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-3 py-4" style={{ borderTop: "1px solid var(--border)" }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => p - 1)}
-                >
-                  <ChevronLeft size={14} />
+                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+                  ←
                 </Button>
-                <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                  Page {page} of {totalPages}
+                <span className="text-sm tabular-nums" style={{ color: "var(--text-secondary)" }}>
+                  {page} / {totalPages}
                 </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page === totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  <ChevronRight size={14} />
+                <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+                  →
                 </Button>
               </div>
             )}

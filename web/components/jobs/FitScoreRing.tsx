@@ -8,16 +8,16 @@ interface FitScoreRingProps {
 }
 
 const SIZE_MAP = {
-  sm: { outer: 36, stroke: 3, fontSize: 10, gap: 4 },
-  md: { outer: 56, stroke: 4, fontSize: 14, gap: 6 },
-  lg: { outer: 80, stroke: 5, fontSize: 20, gap: 8 },
+  sm: { outer: 34, stroke: 3, fontSize: 10, gap: 4 },
+  md: { outer: 52, stroke: 4, fontSize: 14, gap: 6 },
+  lg: { outer: 76, stroke: 5, fontSize: 19, gap: 8 },
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 8) return "#E8734A" // primary / terracotta
-  if (score >= 6) return "#5B8B6E" // success / sage
-  if (score >= 4) return "#E8A23A" // warning / amber
-  return "#9B8B78"                  // muted
+  if (score >= 8) return "#5B5BD6"
+  if (score >= 6) return "#17A34A"
+  if (score >= 4) return "#C47D16"
+  return "#8F8FAC"
 }
 
 function getScoreLabel(score: number): string {
@@ -42,7 +42,6 @@ export function FitScoreRing({ score, size = "md" }: FitScoreRingProps) {
   useEffect(() => {
     const el = dashRef.current
     if (!el) return
-    // Animate from full offset (empty) to target
     el.style.strokeDashoffset = String(circumference)
     const raf = requestAnimationFrame(() => {
       el.style.transition = "stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)"
@@ -54,37 +53,23 @@ export function FitScoreRing({ score, size = "md" }: FitScoreRingProps) {
   return (
     <div className="flex flex-col items-center gap-1">
       <svg width={config.outer} height={config.outer} style={{ display: "block" }}>
-        {/* Background ring */}
         <circle
-          cx={cx}
-          cy={cy}
-          r={radius}
-          fill="none"
-          stroke="#EDE8E0"
-          strokeWidth={config.stroke}
+          cx={cx} cy={cy} r={radius}
+          fill="none" stroke="var(--border)" strokeWidth={config.stroke}
         />
-        {/* Score ring */}
         <circle
           ref={dashRef}
-          cx={cx}
-          cy={cy}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={config.stroke}
+          cx={cx} cy={cy} r={radius}
+          fill="none" stroke={color} strokeWidth={config.stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={circumference}
           transform={`rotate(-90 ${cx} ${cy})`}
         />
-        {/* Score text */}
         <text
-          x={cx}
-          y={cy}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontSize={config.fontSize}
-          fontWeight="700"
+          x={cx} y={cy}
+          textAnchor="middle" dominantBaseline="middle"
+          fontSize={config.fontSize} fontWeight="700"
           fontFamily="Inter, system-ui, sans-serif"
           fill={color}
         >
@@ -92,10 +77,7 @@ export function FitScoreRing({ score, size = "md" }: FitScoreRingProps) {
         </text>
       </svg>
       {size !== "sm" && (
-        <span
-          className="text-xs font-medium"
-          style={{ color, fontSize: 10 }}
-        >
+        <span className="text-[10px] font-semibold tracking-wide uppercase" style={{ color }}>
           {getScoreLabel(score)}
         </span>
       )}

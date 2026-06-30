@@ -12,7 +12,6 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts"
-import { ChevronDown, ChevronUp, Clock, Search, Plus, Briefcase, SkipForward } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getRunHistory } from "@/lib/api"
@@ -59,21 +58,15 @@ function RunCard({ run, index }: { run: RunRecord; index: number }) {
         {/* Stats row */}
         <div className="flex-1 grid grid-cols-5 gap-3">
           {[
-            { icon: Clock, label: "Duration", value: formatDuration(run.duration_secs), color: "var(--text-secondary)" },
-            { icon: Search, label: "Queries", value: run.queries_run, color: "var(--ai-accent)" },
-            { icon: Briefcase, label: "Raw", value: run.raw_results, color: "var(--text-secondary)" },
-            { icon: Plus, label: "Added", value: run.new_added, color: "var(--success)", bold: true },
-            { icon: SkipForward, label: "Dupes", value: run.dupes_skipped, color: "var(--text-muted)" },
-          ].map(({ icon: Icon, label, value, color, bold }) => (
+            { label: "Duration", value: formatDuration(run.duration_secs), color: "var(--text-secondary)" },
+            { label: "Queries",  value: run.queries_run,                   color: "var(--primary)" },
+            { label: "Raw",      value: run.raw_results,                   color: "var(--text-secondary)" },
+            { label: "Added",    value: run.new_added,                     color: "var(--success)", bold: true },
+            { label: "Dupes",    value: run.dupes_skipped,                 color: "var(--text-muted)" },
+          ].map(({ label, value, color, bold }) => (
             <div key={label} className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-0.5">
-                <Icon size={11} style={{ color: "var(--text-muted)" }} />
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</span>
-              </div>
-              <span
-                className={cn("text-sm", bold ? "font-bold" : "font-medium")}
-                style={{ color }}
-              >
+              <p className="text-[11px] mb-0.5 font-medium" style={{ color: "var(--text-muted)" }}>{label}</p>
+              <span className={cn("text-sm tabular-nums", bold ? "font-black" : "font-medium")} style={{ color }}>
                 {value}
               </span>
             </div>
@@ -90,9 +83,8 @@ function RunCard({ run, index }: { run: RunRecord; index: number }) {
           </span>
         )}
 
-        {/* Expand chevron */}
-        <div style={{ color: "var(--text-muted)" }}>
-          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        <div className="text-xs font-medium shrink-0" style={{ color: "var(--text-muted)" }}>
+          {expanded ? "−" : "+"}
         </div>
       </button>
 
@@ -111,10 +103,10 @@ function RunCard({ run, index }: { run: RunRecord; index: number }) {
               {run.summary && (
                 <div
                   className="p-3.5 rounded-xl"
-                  style={{ background: "var(--ai-light)", border: "1px solid rgba(79,70,229,0.2)" }}
+                  style={{ background: "var(--ai-light)", border: "1px solid var(--primary-border)" }}
                 >
-                  <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--ai-accent)" }}>
-                    ✨ AI Summary
+                  <p className="text-[11px] font-bold tracking-widest uppercase mb-1.5" style={{ color: "var(--primary)", letterSpacing: "0.07em" }}>
+                    AI Summary
                   </p>
                   <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                     {run.summary}
@@ -189,13 +181,8 @@ export default function HistoryPage() {
         {isLoading ? (
           <Skeleton className="h-48 w-full rounded-xl" />
         ) : chartData.length === 0 ? (
-          <div className="h-48 flex items-center justify-center text-center">
-            <div>
-              <div className="text-4xl mb-2">📈</div>
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                No run history yet
-              </p>
-            </div>
+          <div className="h-48 flex items-center justify-center">
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>No run history yet</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={200}>
@@ -225,7 +212,7 @@ export default function HistoryPage() {
                 {chartData.map((entry, index) => (
                   <Cell
                     key={index}
-                    fill={entry.new > 5 ? "#E8734A" : entry.new > 0 ? "#E8A23A" : "#EDE8E0"}
+                    fill={entry.new > 5 ? "#5B5BD6" : entry.new > 0 ? "#7B61FF" : "var(--border)"}
                   />
                 ))}
               </Bar>
@@ -248,12 +235,11 @@ export default function HistoryPage() {
           </div>
         ) : !runs || runs.length === 0 ? (
           <div className="py-20 text-center rounded-xl" style={{ border: "1px dashed var(--border)" }}>
-            <div className="text-5xl mb-4">🕐</div>
-            <p className="font-display text-lg font-semibold" style={{ color: "var(--text-secondary)" }}>
+            <p className="font-semibold text-base mb-1" style={{ color: "var(--text-secondary)", letterSpacing: "-0.02em" }}>
               No runs yet
             </p>
             <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-              Launch the agent from the Run page to build your history
+              Start a search to build your history
             </p>
           </div>
         ) : (

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
-import { X, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -82,8 +81,8 @@ function TagInput({
             style={{ background: "var(--primary-light)", color: "var(--primary)", border: "1px solid var(--primary)" }}
           >
             {tag}
-            <button onClick={() => removeTag(tag)} className="opacity-60 hover:opacity-100 transition-opacity">
-              <X size={11} />
+            <button onClick={() => removeTag(tag)} className="opacity-50 hover:opacity-100 transition-opacity text-[11px] leading-none">
+              ×
             </button>
           </span>
         ))}
