@@ -338,7 +338,7 @@ export default function DashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         className="rounded-xl p-5 flex items-center justify-between"
-        style={{ background: "var(--primary-light)", border: "1px solid #f0c5b0" }}
+        style={{ background: "var(--primary-light)", border: "1px solid var(--primary)" }}
       >
         <div className="flex items-center gap-4">
           <div

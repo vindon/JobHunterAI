@@ -111,7 +111,7 @@ function RunCard({ run, index }: { run: RunRecord; index: number }) {
               {run.summary && (
                 <div
                   className="p-3.5 rounded-xl"
-                  style={{ background: "var(--ai-light)", border: "1px solid #d4c8f0" }}
+                  style={{ background: "var(--ai-light)", border: "1px solid rgba(79,70,229,0.2)" }}
                 >
                   <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--ai-accent)" }}>
                     ✨ AI Summary

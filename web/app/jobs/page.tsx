@@ -161,7 +161,7 @@ function JobDetailSheet({
           {job.fit_notes && (
             <div
               className="rounded-xl p-4"
-              style={{ background: "var(--ai-light)", border: "1px solid #d4c8f0" }}
+              style={{ background: "var(--ai-light)", border: "1px solid rgba(79,70,229,0.2)" }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles size={14} style={{ color: "var(--ai-accent)" }} />

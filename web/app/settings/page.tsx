@@ -419,7 +419,7 @@ export default function SettingsPage() {
                       className="flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all"
                       style={{
                         background: portal.enabled ? "var(--primary-light)" : "var(--surface-warm)",
-                        border: `1px solid ${portal.enabled ? "#f0c5b0" : "var(--border)"}`,
+                        border: `1px solid ${portal.enabled ? "var(--primary)" : "var(--border)"}`,
                       }}
                     >
                       <span className="text-lg shrink-0">{meta.icon}</span>

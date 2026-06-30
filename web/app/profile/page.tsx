@@ -79,7 +79,7 @@ function TagInput({
           <span
             key={tag}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
-            style={{ background: "var(--primary-light)", color: "var(--primary)", border: "1px solid #f0c5b0" }}
+            style={{ background: "var(--primary-light)", color: "var(--primary)", border: "1px solid var(--primary)" }}
           >
             {tag}
             <button onClick={() => removeTag(tag)} className="opacity-60 hover:opacity-100 transition-opacity">
@@ -343,7 +343,7 @@ export default function ProfilePage() {
             style={{
               background: "var(--primary-light)",
               color: "var(--text-secondary)",
-              border: "1px solid #f0c5b0",
+              border: "1px solid var(--border)",
             }}
           >
             {SCORE_DESCRIPTIONS[form.fit_score_threshold] ?? ""}
