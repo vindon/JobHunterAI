@@ -301,7 +301,10 @@ export default function SearchPage() {
         style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)" }}
       >
         <div className="mb-7">
-          <h1 className="text-2xl font-black mb-1" style={{ color: "var(--text-primary)", letterSpacing: "-0.04em", lineHeight: 1.1 }}>
+          <h1
+            className="font-black mb-2"
+            style={{ color: "var(--text-primary)", letterSpacing: "-0.04em", lineHeight: 1, fontSize: 36 }}
+          >
             Find Remote Jobs
           </h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>

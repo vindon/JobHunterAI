@@ -14,10 +14,10 @@ const SIZE_MAP = {
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 8) return "#5B5BD6"
-  if (score >= 6) return "#17A34A"
-  if (score >= 4) return "#C47D16"
-  return "#8F8FAC"
+  if (score >= 8) return "#6366F1"
+  if (score >= 6) return "#059669"
+  if (score >= 4) return "#D97706"
+  return "#7C7B9A"
 }
 
 function getScoreLabel(score: number): string {
