@@ -74,7 +74,10 @@ Use EXACTLY these JSON field names — no variations:
   "urgency"       one of: 🔥 URGENT, ⚡ Active
                   (immediate/urgent/asap → 🔥 URGENT; anything else → ⚡ Active)
   "source_portal" portal name e.g. SEEK AU, Indeed US, Reed UK, LinkedIn
-  "link"          URL from the search result — copy the URL exactly
+  "link"          Direct URL to the individual job posting — must be a specific job page,
+                  NOT a search results page. If the URL contains patterns like /q-role-l-location-jobs.html,
+                  ?q=, /skill/, /jobs/search, or is clearly a list/category page, look for a
+                  direct job URL inside the snippet. If no direct URL is found, skip this result.
   "salary_hint"   salary/rate if mentioned, else ""
   "raw_snippet"   first 150 chars of the snippet
 
@@ -98,6 +101,8 @@ EXCLUSION RULES (only exclude if clearly true):
 - Exclude if role is explicitly junior, intern, or entry-level
 - Exclude if job is explicitly stated as on-site only (not remote at all)
 - Exclude spam pages or aggregator index pages with no real job listing
+- Exclude if the only available URL is a search results page or category page (Indeed q-*.html,
+  DynamiteJobs /skill/, any URL with ?q= or /jobs/search) and no direct job link can be found in the snippet
 - When in doubt, include the job — do not exclude based on missing information
 
 Return ONLY the JSON array. No preamble. No explanation. No markdown.
