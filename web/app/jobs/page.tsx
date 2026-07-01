@@ -58,6 +58,15 @@ const SCORE_FILTERS = [
 
 const COUNTRIES = ["Australia", "New Zealand", "United Kingdom", "United States", "Canada", "India", "Germany", "Singapore"]
 
+// Returns true when a URL is a search/category page rather than a direct job listing
+function isSearchPageUrl(url: string): boolean {
+  return /\/q[-_].{3,}[-_]jobs\.html|[?&]q=|\/jobs\/search|\/skill\/|\/jobs\.html\b|\/jobs\/category/i.test(url)
+}
+
+function linkLabel(url: string): string {
+  return isSearchPageUrl(url) ? "Search Results ↗" : "Open Listing ↗"
+}
+
 // --- Job Detail Sheet ---
 function JobDetailSheet({
   job,
@@ -240,7 +249,7 @@ function JobDetailSheet({
                   className="w-full"
                   style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
                 >
-                  Open Listing ↗
+                  {linkLabel(job.direct_link)}
                 </Button>
               </a>
             )}
@@ -357,7 +366,8 @@ function TableView({
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
                       className="text-xs font-medium"
-                      style={{ color: "var(--text-muted)" }}
+                      title={isSearchPageUrl(job.direct_link) ? "Search results page — direct link unavailable" : "Open original listing"}
+                      style={{ color: isSearchPageUrl(job.direct_link) ? "var(--text-disabled)" : "var(--text-muted)" }}
                     >
                       ↗
                     </a>
