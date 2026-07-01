@@ -1,8 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { motion, AnimatePresence } from "framer-motion"
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import { motion } from "framer-motion"
 import { format, parseISO, formatDistanceToNow } from "date-fns"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -13,117 +12,60 @@ import type { Job } from "@/lib/types"
 
 function getGreeting() {
   const h = new Date().getHours()
-  if (h < 12) return "Good morning"
-  if (h < 17) return "Good afternoon"
-  return "Good evening"
+  if (h < 12) return "Good morning,"
+  if (h < 17) return "Good afternoon,"
+  return "Good evening,"
 }
 
-const STAT_CONFIG = [
-  {
-    label: "TOTAL FOUND",
-    grad: "linear-gradient(145deg, #EEF2FF 0%, #F5F3FF 100%)",
-    border: "1px solid #C7D2FE",
-    left: "#6366F1",
-    valueColor: "#4F46E5",
-  },
-  {
-    label: "APPLIED",
-    grad: "linear-gradient(145deg, #F5F3FF 0%, #FAF8FF 100%)",
-    border: "1px solid #DDD6FE",
-    left: "#8B5CF6",
-    valueColor: "#7C3AED",
-  },
-  {
-    label: "INTERVIEWS",
-    grad: "linear-gradient(145deg, #ECFDF5 0%, #F0FDF9 100%)",
-    border: "1px solid #A7F3D0",
-    left: "#10B981",
-    valueColor: "#059669",
-  },
-  {
-    label: "OFFERS",
-    grad: "linear-gradient(145deg, #FFFBEB 0%, #FEFCE8 100%)",
-    border: "1px solid #FDE68A",
-    left: "#F59E0B",
-    valueColor: "#D97706",
-  },
-]
+function scoreGrad(score: number) {
+  if (score >= 8) return "linear-gradient(135deg, #6366F1, #8B5CF6)"
+  if (score >= 6) return "linear-gradient(135deg, #059669, #10B981)"
+  return "linear-gradient(135deg, #D97706, #F59E0B)"
+}
 
-function StatCard({
-  label, value, grad, border, left, valueColor, delay = 0,
-}: {
-  label: string; value: number | undefined
-  grad: string; border: string; left: string; valueColor: string; delay?: number
-}) {
+// ── Horizontal job card ────────────────────────────────
+function JobCard({ job, index }: { job: Job; index: number }) {
+  const flag = COUNTRY_FLAGS[job.country] ?? ""
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl p-6 relative overflow-hidden"
+      initial={{ opacity: 1, x: 16 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.04 * index, duration: 0.28 }}
+      className="shrink-0 flex flex-col rounded-2xl p-4"
       style={{
-        background: grad,
-        border,
-        borderLeft: `4px solid ${left}`,
-        boxShadow: `0 1px 4px ${left}22, 0 1px 2px rgba(0,0,0,0.03)`,
+        width: 208,
+        minHeight: 196,
+        border: "1px solid var(--border)",
+        background: "var(--surface)",
+        boxShadow: "var(--shadow-sm)",
       }}
     >
-      <p
-        className="text-[10px] font-black mb-4"
-        style={{ color: left, letterSpacing: "0.12em", textTransform: "uppercase" }}
-      >
-        {label}
-      </p>
-      {value === undefined ? (
-        <div className="h-16 w-20 rounded-xl animate-pulse" style={{ background: `${left}28` }} />
-      ) : (
-        <p
-          className="text-6xl font-black tabular-nums leading-none"
-          style={{ color: valueColor, letterSpacing: "-0.04em" }}
-        >
-          {value}
-        </p>
-      )}
-    </motion.div>
-  )
-}
-
-function TopMatchCard({ job, index }: { job: Job; index: number }) {
-  const flag = COUNTRY_FLAGS[job.country] ?? ""
-  const score = job.fit_score
-  const scoreGrad =
-    score >= 8
-      ? "linear-gradient(135deg, #6366F1, #8B5CF6)"
-      : score >= 6
-      ? "linear-gradient(135deg, #059669, #10B981)"
-      : "linear-gradient(135deg, #D97706, #F59E0B)"
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.06 * index, duration: 0.3 }}
-      className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-[var(--surface-warm)] group cursor-pointer"
-      style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
-    >
       <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black text-white shrink-0"
-        style={{ background: scoreGrad, letterSpacing: "-0.02em", boxShadow: "0 2px 8px rgba(0,0,0,0.18)" }}
+        className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white mb-3 shrink-0"
+        style={{ background: scoreGrad(job.fit_score), boxShadow: "0 2px 8px rgba(0,0,0,0.16)" }}
       >
-        {score}
+        {job.fit_score}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate" style={{ color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
-          {job.role}
-        </p>
-        <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-secondary)" }}>
-          {job.company} · {flag} {job.country}
-        </p>
-      </div>
-      <Link href={`/jobs?highlight=${job.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+      <p
+        className="text-sm font-semibold leading-snug flex-1 mb-3"
+        style={{ color: "var(--text-primary)", letterSpacing: "-0.01em" }}
+      >
+        {job.role}
+      </p>
+      <p className="text-xs mb-0.5 truncate" style={{ color: "var(--text-muted)" }}>
+        {job.company}
+      </p>
+      <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+        {flag} {job.country}
+      </p>
+      <Link href={`/jobs?highlight=${job.id}`}>
         <button
-          className="text-xs px-2.5 py-1 rounded-lg font-medium border"
-          style={{ color: "var(--primary)", borderColor: "var(--primary-border)", background: "var(--primary-light)" }}
+          className="w-full text-xs py-2 rounded-xl font-semibold transition-colors"
+          style={{
+            border: "1px solid var(--primary-border)",
+            color: "var(--primary)",
+            background: "var(--primary-light)",
+          }}
         >
           Open
         </button>
@@ -132,242 +74,280 @@ function TopMatchCard({ job, index }: { job: Job; index: number }) {
   )
 }
 
+// ── Pipeline stat tile ─────────────────────────────────
+function PipelineStat({
+  label, value, accent, delay = 0,
+}: {
+  label: string; value: number | undefined; accent: string; delay?: number
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.3 }}
+      className="flex-1 rounded-xl px-4 py-3"
+      style={{
+        border: "1px solid var(--border)",
+        background: "var(--surface)",
+        borderLeft: `3px solid ${accent}`,
+      }}
+    >
+      <p
+        className="text-[10px] font-black mb-1.5"
+        style={{ color: accent, letterSpacing: "0.1em", textTransform: "uppercase" }}
+      >
+        {label}
+      </p>
+      {value === undefined ? (
+        <div className="h-8 w-10 rounded animate-pulse" style={{ background: `${accent}25` }} />
+      ) : (
+        <p
+          className="text-3xl font-black tabular-nums"
+          style={{ color: accent, letterSpacing: "-0.04em", lineHeight: 1 }}
+        >
+          {value}
+        </p>
+      )}
+    </motion.div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter()
 
   const { data: stats } = useQuery({ queryKey: ["job-stats"], queryFn: getJobStats })
-  const { data: topJobs } = useQuery({ queryKey: ["top-jobs"], queryFn: () => getJobs({ sort: "fit_score_desc", per_page: 5 }) })
-  const { data: recentJobs } = useQuery({ queryKey: ["recent-jobs"], queryFn: () => getJobs({ sort: "created_at_desc", per_page: 5 }) })
+  const { data: topJobs } = useQuery({
+    queryKey: ["top-jobs"],
+    queryFn: () => getJobs({ sort: "fit_score_desc", per_page: 8 }),
+  })
+  const { data: recentJobs } = useQuery({
+    queryKey: ["recent-jobs"],
+    queryFn: () => getJobs({ sort: "created_at_desc", per_page: 6 }),
+  })
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile })
   const { data: runHistory } = useQuery({ queryKey: ["run-history"], queryFn: getRunHistory })
 
   const greeting = getGreeting()
   const firstName = profile?.name?.split(" ")[0] ?? "there"
-
-  const statValues = [
-    stats?.total,
-    stats ? (stats.by_status?.["📤 Applied"] ?? 0) : undefined,
-    stats ? (stats.by_status?.["🎤 Interview"] ?? 0) : undefined,
-    stats ? (stats.by_status?.["✅ Offer"] ?? 0) : undefined,
-  ]
-
-  const funnelData = stats
-    ? [
-        { stage: "Found",     count: stats.total,                             fill: "#6366F1" },
-        { stage: "Reviewing", count: stats.by_status?.["⏳ Reviewing"] ?? 0,  fill: "#8B5CF6" },
-        { stage: "Applied",   count: stats.by_status?.["📤 Applied"] ?? 0,    fill: "#10B981" },
-        { stage: "Interview", count: stats.by_status?.["🎤 Interview"] ?? 0,  fill: "#F59E0B" },
-        { stage: "Offer",     count: stats.by_status?.["✅ Offer"] ?? 0,      fill: "#F43F5E" },
-      ]
-    : []
-
   const lastRun = runHistory?.[0]
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto">
-      {/* Greeting */}
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+    <div className="p-6 max-w-[1400px] mx-auto space-y-5">
+
+      {/* ── Greeting ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-end justify-between"
+      >
+        <div>
+          <p className="text-base mb-0.5" style={{ color: "var(--text-muted)" }}>
+            {greeting}
+          </p>
+          <h1
+            className="font-black leading-none"
+            style={{
+              color: "var(--text-primary)",
+              fontSize: "clamp(44px, 5.5vw, 68px)",
+              letterSpacing: "-0.05em",
+              lineHeight: 0.92,
+            }}
+          >
+            {firstName}
+          </h1>
+        </div>
         <p
-          className="text-[11px] font-black mb-2"
-          style={{ color: "var(--primary)", letterSpacing: "0.12em", textTransform: "uppercase" }}
+          className="text-[11px] font-semibold pb-1"
+          style={{ color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}
         >
           {format(new Date(), "EEEE, MMMM d, yyyy")}
         </p>
-        <h2
-          className="font-black leading-none mb-2"
-          style={{ color: "var(--text-primary)", letterSpacing: "-0.04em", fontSize: 40, lineHeight: 1 }}
-        >
-          {greeting}, {firstName}
-        </h2>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Your job hunt overview
-        </p>
       </motion.div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {STAT_CONFIG.map((cfg, i) => (
-          <StatCard
-            key={cfg.label}
-            label={cfg.label}
-            value={statValues[i]}
-            grad={cfg.grad}
-            border={cfg.border}
-            left={cfg.left}
-            valueColor={cfg.valueColor}
-            delay={i * 0.05}
+      {/* ── Hero stat + pipeline ── */}
+      <div className="grid gap-4" style={{ gridTemplateColumns: "2fr 1fr" }}>
+
+        {/* Hero stat card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="hero-stat-card rounded-2xl p-8 relative overflow-hidden"
+          style={{ minHeight: 180 }}
+        >
+          <p
+            className="text-[10px] font-black mb-4"
+            style={{ color: "#4338CA", letterSpacing: "0.14em", textTransform: "uppercase" }}
+          >
+            Total Found
+          </p>
+          {stats === undefined ? (
+            <div className="h-20 w-36 rounded-xl animate-pulse" style={{ background: "#4338CA22" }} />
+          ) : (
+            <p
+              className="font-black tabular-nums leading-none"
+              style={{
+                color: "#312E81",
+                fontSize: "clamp(80px, 9vw, 108px)",
+                letterSpacing: "-0.05em",
+                lineHeight: 0.85,
+              }}
+            >
+              {stats.total}
+            </p>
+          )}
+          <p className="text-sm mt-4" style={{ color: "#4338CA", opacity: 0.6 }}>
+            Remote AI &amp; automation roles
+          </p>
+        </motion.div>
+
+        {/* Pipeline stack */}
+        <div className="flex flex-col gap-3">
+          <PipelineStat
+            label="Applied"
+            value={stats ? (stats.by_status?.["📤 Applied"] ?? 0) : undefined}
+            accent="#8B5CF6"
+            delay={0.05}
           />
-        ))}
+          <PipelineStat
+            label="Interviews"
+            value={stats ? (stats.by_status?.["🎤 Interview"] ?? 0) : undefined}
+            accent="#059669"
+            delay={0.10}
+          />
+          <PipelineStat
+            label="Offers"
+            value={stats ? (stats.by_status?.["✅ Offer"] ?? 0) : undefined}
+            accent="#D97706"
+            delay={0.15}
+          />
+        </div>
       </div>
 
-      {/* Two-column */}
-      <div className="grid grid-cols-[1fr_340px] gap-5 mb-5">
-        {/* Top Matches */}
+      {/* ── Top Matches — horizontal scroll ── */}
+      <div
+        className="rounded-2xl p-6"
+        style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="font-black text-base" style={{ color: "var(--text-primary)", letterSpacing: "-0.03em" }}>
+              Top Matches
+            </h3>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+              Highest-scoring opportunities
+            </p>
+          </div>
+          <Link href="/jobs">
+            <button className="text-xs font-semibold" style={{ color: "var(--primary)" }}>
+              View all →
+            </button>
+          </Link>
+        </div>
+
+        {!topJobs ? (
+          <div className="flex gap-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="shrink-0 rounded-2xl" style={{ width: 208, height: 196 }} />
+            ))}
+          </div>
+        ) : topJobs.jobs.length === 0 ? (
+          <div className="py-14 text-center">
+            <p className="font-semibold text-sm mb-1" style={{ color: "var(--text-secondary)" }}>No jobs yet</p>
+            <p className="text-xs mb-5" style={{ color: "var(--text-muted)" }}>
+              Start a search to discover remote opportunities
+            </p>
+            <button className="btn-primary px-5 py-2 rounded-xl text-sm font-semibold" onClick={() => router.push("/run")}>
+              Search Now
+            </button>
+          </div>
+        ) : (
+          <div
+            className="flex gap-3 overflow-x-auto"
+            style={{ paddingBottom: 4, scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {topJobs.jobs.map((job, i) => (
+              <JobCard key={job.id} job={job} index={i} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Recent Activity + CTA side-by-side ── */}
+      <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 280px" }}>
+
+        {/* Recent Activity */}
         <div
-          className="rounded-2xl p-6"
+          className="rounded-2xl p-5"
           style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
         >
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="font-black text-base" style={{ color: "var(--text-primary)", letterSpacing: "-0.03em" }}>
-                Top Matches
-              </h3>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Highest-scoring opportunities
-              </p>
-            </div>
-            <Link href="/jobs">
-              <button className="text-xs font-semibold" style={{ color: "var(--primary)" }}>
-                View all →
-              </button>
-            </Link>
-          </div>
-
-          <div className="space-y-2">
-            <AnimatePresence>
-              {!topJobs ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full rounded-xl" />
-                ))
-              ) : topJobs.jobs.length === 0 ? (
-                <div className="py-14 text-center">
-                  <p className="font-semibold text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
-                    No jobs yet
-                  </p>
-                  <p className="text-xs mb-5" style={{ color: "var(--text-muted)" }}>
-                    Start a search to discover remote opportunities
-                  </p>
-                  <button
-                    className="btn-primary px-5 py-2 rounded-xl text-sm font-semibold"
-                    onClick={() => router.push("/run")}
-                  >
-                    Search Now
-                  </button>
-                </div>
-              ) : (
-                topJobs.jobs.map((job, i) => <TopMatchCard key={job.id} job={job} index={i} />)
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Right column */}
-        <div className="space-y-4">
-          {/* Application Funnel */}
-          <div
-            className="rounded-2xl p-5"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-          >
-            <h3
-              className="font-black text-sm mb-4"
-              style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}
-            >
-              Application Funnel
-            </h3>
-            {funnelData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={funnelData} layout="vertical" margin={{ left: -10, right: 10 }}>
-                  <XAxis type="number" hide />
-                  <YAxis
-                    type="category" dataKey="stage" width={64}
-                    tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "Inter" }}
-                    axisLine={false} tickLine={false}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "var(--surface-warm)" }}
-                    contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12 }}
-                  />
-                  <Bar dataKey="count" radius={[0, 5, 5, 0]}>
-                    {funnelData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+          <h3 className="font-black text-sm mb-4" style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+            Recent Activity
+          </h3>
+          <div className="space-y-3">
+            {!recentJobs ? (
+              Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-9 w-full rounded-lg" />)
+            ) : recentJobs.jobs.length === 0 ? (
+              <p className="text-xs py-4 text-center" style={{ color: "var(--text-muted)" }}>No activity yet</p>
             ) : (
-              <Skeleton className="h-40 w-full rounded-xl" />
+              recentJobs.jobs.map((job) => (
+                <div key={job.id} className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--primary)" }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color: "var(--text-primary)" }}>{job.role}</p>
+                    <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>{job.company}</p>
+                  </div>
+                  <span className="text-[11px] shrink-0 tabular-nums" style={{ color: "var(--text-muted)" }}>
+                    {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+              ))
             )}
           </div>
-
-          {/* Recent Activity */}
-          <div
-            className="rounded-2xl p-5"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-          >
-            <h3
-              className="font-black text-sm mb-4"
-              style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}
-            >
-              Recent Activity
-            </h3>
-            <div className="space-y-3">
-              {!recentJobs ? (
-                Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-9 w-full rounded-lg" />)
-              ) : recentJobs.jobs.length === 0 ? (
-                <p className="text-xs py-4 text-center" style={{ color: "var(--text-muted)" }}>
-                  No activity yet
-                </p>
-              ) : (
-                recentJobs.jobs.map((job) => (
-                  <div key={job.id} className="flex items-center gap-2.5">
-                    <div
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ background: "var(--primary)" }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate" style={{ color: "var(--text-primary)" }}>
-                        {job.role}
-                      </p>
-                      <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>
-                        {job.company}
-                      </p>
-                    </div>
-                    <span className="text-[11px] shrink-0 tabular-nums" style={{ color: "var(--text-muted)" }}>
-                      {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
         </div>
-      </div>
 
-      {/* CTA banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="rounded-2xl p-6 flex items-center justify-between"
-        style={{
-          background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
-          boxShadow: "0 4px 24px rgba(99,102,241,0.35), 0 1px 4px rgba(99,102,241,0.2)",
-        }}
-      >
-        <div>
-          <h3
-            className="font-black text-base text-white mb-1"
-            style={{ letterSpacing: "-0.03em" }}
-          >
-            Ready for your next search?
-          </h3>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
-            {lastRun
-              ? `Last run: ${format(parseISO(lastRun.run_date), "MMM d 'at' h:mm a")} · Found ${lastRun.new_added} new jobs`
-              : "No runs yet — start discovering remote opportunities"}
-          </p>
-        </div>
-        <button
-          onClick={() => router.push("/run")}
-          className="shrink-0 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+        {/* CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="rounded-2xl p-6 flex flex-col justify-between"
           style={{
-            background: "rgba(255,255,255,0.15)",
-            border: "1px solid rgba(255,255,255,0.25)",
-            backdropFilter: "blur(8px)",
-            letterSpacing: "-0.01em",
+            background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
+            boxShadow: "0 4px 24px rgba(99,102,241,0.35)",
           }}
         >
-          Search Now →
-        </button>
-      </motion.div>
+          <div>
+            <p
+              className="text-[10px] font-black mb-2 text-white"
+              style={{ letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.55 }}
+            >
+              Next Search
+            </p>
+            <p className="font-black text-white mb-2" style={{ fontSize: 20, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+              Ready for your next search?
+            </p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+              {lastRun
+                ? `Last run ${format(parseISO(lastRun.run_date), "MMM d 'at' h:mm a")} · ${lastRun.new_added} new`
+                : "No runs yet — start discovering roles"}
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/run")}
+            className="mt-5 w-full py-2.5 rounded-xl text-sm font-bold text-white"
+            style={{
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.25)",
+              backdropFilter: "blur(8px)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Search Now →
+          </button>
+        </motion.div>
+      </div>
     </div>
   )
 }

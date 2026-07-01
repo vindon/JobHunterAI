@@ -156,6 +156,21 @@
 .btn-primary:active { transform: translateY(0); }
 .btn-primary:disabled { opacity: 0.5; box-shadow: none; cursor: not-allowed; transform: none; }
 
+/* ── Hero stat — ambient gradient mesh ──────────────── */
+@keyframes mesh-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.hero-stat-card {
+  background: linear-gradient(135deg, #EEF2FF, #EDE9FE, #E0E7FF, #EEF2FF);
+  background-size: 300% 300%;
+  animation: mesh-shift 10s ease infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-stat-card { animation: none; background: #EEF2FF; }
+}
+
 /* ── Score ring animation ───────────────────────────── */
 .node-running {
   animation: pulse-soft 2s ease-in-out infinite;
