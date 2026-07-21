@@ -96,18 +96,26 @@ export async function exportJobsCsv(): Promise<Blob> {
 
 export interface StartRunOptions {
   dry_run?: boolean
-  queries?: string[]
+  queries_override?: string[]
+}
+
+export interface StartRunResult {
+  run_id: string
+  started_at: string
 }
 
 export interface ActiveRun {
-  run_id: string
-  started_at: string
-  status: "running" | "complete" | "error"
-  current_node?: string
+  active: boolean
+  run_id: string | null
+  rate_limit: {
+    runs_this_hour: number
+    max_per_hour: number
+    cooldown_seconds: number
+  }
 }
 
 export async function getRunHistory(): Promise<RunRecord[]> {
-  return apiFetch<RunRecord[]>("/runs")
+  return apiFetch<RunRecord[]>("/runs/history")
 }
 
 export async function getActiveRun(): Promise<ActiveRun | null> {
@@ -118,8 +126,8 @@ export async function getActiveRun(): Promise<ActiveRun | null> {
   }
 }
 
-export async function startRun(options?: StartRunOptions): Promise<ActiveRun> {
-  return apiFetch<ActiveRun>("/runs/start", {
+export async function startRun(options?: StartRunOptions): Promise<StartRunResult> {
+  return apiFetch<StartRunResult>("/runs/start", {
     method: "POST",
     body: JSON.stringify(options ?? {}),
   })
@@ -166,6 +174,26 @@ export async function deleteSearchQuery(index: number): Promise<Settings> {
   return apiFetch<Settings>(`/settings/queries/${index}`, { method: "DELETE" })
 }
 
-export async function clearAllJobs(): Promise<void> {
-  return apiFetch<void>("/jobs/all", { method: "DELETE" })
+export async function clearAllJobs(): Promise<{ deleted: number }> {
+  return apiFetch<{ deleted: number }>("/jobs/all", { method: "DELETE" })
+}
+
+// --- Portals ---
+
+export interface Portal {
+  name: string
+  enabled: boolean
+}
+
+export async function getPortals(): Promise<Portal[]> {
+  const res = await apiFetch<{ portals: Portal[] }>("/settings/portals")
+  return res.portals
+}
+
+export async function updatePortals(portals: Record<string, boolean>): Promise<Portal[]> {
+  const res = await apiFetch<{ portals: Portal[] }>("/settings/portals", {
+    method: "PUT",
+    body: JSON.stringify({ portals }),
+  })
+  return res.portals
 }

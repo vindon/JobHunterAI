@@ -32,6 +32,13 @@ _PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
+# ── Load .env so TAVILY_API_KEY / ANTHROPIC_API_KEY etc. are available ────────
+try:
+    from dotenv import load_dotenv
+    load_dotenv(_PROJECT_ROOT / ".env")
+except ImportError:
+    pass
+
 from api.database import create_db_and_tables, engine
 from api.models import Job
 from api.routes import jobs as jobs_router

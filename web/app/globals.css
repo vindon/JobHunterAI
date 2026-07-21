@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -6,131 +6,107 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* Brand colors */
   --color-background: var(--background);
   --color-surface: var(--surface);
-  --color-surface-warm: var(--surface-warm);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-light: var(--primary-light);
   --color-primary-foreground: var(--primary-foreground);
   --color-success: var(--success);
   --color-success-light: var(--success-light);
-  --color-ai-accent: var(--ai-accent);
-  --color-ai-light: var(--ai-light);
   --color-warning: var(--warning);
-  --color-warning-light: var(--warning-light);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
 
-  /* Shadcn aliases */
+  /* shadcn aliases */
   --color-foreground: var(--text-primary);
   --color-card: var(--surface);
   --color-card-foreground: var(--text-primary);
   --color-popover: var(--surface);
   --color-popover-foreground: var(--text-primary);
-  --color-secondary: var(--surface-warm);
+  --color-secondary: #F1F5F9;
   --color-secondary-foreground: var(--text-secondary);
-  --color-muted: var(--surface-warm);
+  --color-muted: #F8FAFC;
   --color-muted-foreground: var(--text-muted);
   --color-accent: var(--primary-light);
   --color-accent-foreground: var(--primary);
-  --color-destructive: #E85A4A;
+  --color-destructive: #DC2626;
   --color-input: var(--border);
   --color-ring: var(--primary);
 
-  /* Sidebar colors */
-  --color-sidebar-ring: var(--primary);
-  --color-sidebar-border: var(--border);
-  --color-sidebar-accent-foreground: var(--primary);
-  --color-sidebar-accent: var(--primary-light);
-  --color-sidebar-primary-foreground: #ffffff;
-  --color-sidebar-primary: var(--primary);
-  --color-sidebar-foreground: var(--text-secondary);
-  --color-sidebar: var(--surface-warm);
-
-  /* Chart colors */
   --color-chart-1: var(--primary);
   --color-chart-2: var(--success);
-  --color-chart-3: var(--ai-accent);
+  --color-chart-3: #7C3AED;
   --color-chart-4: var(--warning);
   --color-chart-5: var(--text-muted);
 
-  /* Fonts */
   --font-sans: "Inter", system-ui, sans-serif;
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  /* Border radius */
-  --radius: 0.75rem;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  --radius: 0.5rem;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
-  /* Animations */
-  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
-  --animate-slide-in: slide-in 0.3s ease-out;
   --animate-fade-in: fade-in 0.2s ease-out;
-
-  @keyframes pulse-glow {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(124, 92, 191, 0.4);
-    }
-    50% {
-      box-shadow: 0 0 0 8px rgba(124, 92, 191, 0);
-    }
-  }
-
-  @keyframes slide-in {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+  --animate-slide-up: slide-up 0.25s ease-out;
 
   @keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
   }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 86, 210, 0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(0, 86, 210, 0); }
+  }
 }
 
 :root {
-  /* Brand palette */
-  --background: #FDFAF6;
+  /* Core palette — clean professional blue/white like Reed, SimplyHired */
+  --background: #F4F6F9;
   --surface: #FFFFFF;
-  --surface-warm: #FAF7F2;
-  --primary: #E8734A;
-  --primary-hover: #D4623A;
-  --primary-light: #FDF0EB;
-  --primary-foreground: #ffffff;
-  --success: #5B8B6E;
-  --success-light: #EBF4EF;
-  --ai-accent: #7C5CBF;
-  --ai-light: #F0EBF8;
-  --warning: #E8A23A;
-  --warning-light: #FDF4E3;
 
-  /* Text */
-  --text-primary: #1C1410;
-  --text-secondary: #6B5D52;
-  --text-muted: #9B8B78;
+  --primary: #0056D2;
+  --primary-hover: #0041A3;
+  --primary-light: #EBF3FF;
+  --primary-foreground: #FFFFFF;
+  --primary-border: #BFDBFE;
 
-  /* Borders */
-  --border: #EDE8E0;
-  --border-strong: #D4CFC8;
+  --success: #047857;
+  --success-light: #ECFDF5;
+  --warning: #B45309;
+  --warning-light: #FFFBEB;
+  --danger: #DC2626;
+  --danger-light: #FEF2F2;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 4px rgba(120, 80, 40, 0.06);
-  --shadow-md: 0 4px 16px rgba(120, 80, 40, 0.08);
-  --shadow-lg: 0 8px 32px rgba(120, 80, 40, 0.12);
+  /* Typography — sharp and legible */
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6B7280;
+  --text-disabled: #9CA3AF;
+
+  /* Structure */
+  --border: #E5E7EB;
+  --border-strong: #D1D5DB;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+
+  /* Nav height token */
+  --nav-h: 56px;
+
+  /* Compatibility aliases so older component refs don't break */
+  --surface-warm: #F8FAFC;
+  --ai-accent: #4F46E5;
+  --ai-light: #EEF2FF;
 }
 
 @layer base {
@@ -142,75 +118,46 @@
   html {
     font-family: "Inter", system-ui, sans-serif;
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
   }
 
   body {
     background-color: var(--background);
     color: var(--text-primary);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: var(--surface-warm);
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
-  }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
 
-  /* Selection color */
-  ::selection {
-    background-color: var(--primary-light);
-    color: var(--primary);
-  }
+  ::selection { background: #BFDBFE; color: #1E3A8A; }
 }
 
-/* Utility classes for design system */
-.font-display {
-  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-}
-
-.font-mono-code {
-  font-family: "JetBrains Mono", monospace;
-}
-
-.shadow-brand-sm {
-  box-shadow: var(--shadow-sm);
-}
-
-.shadow-brand-md {
-  box-shadow: var(--shadow-md);
-}
-
-.shadow-brand-lg {
-  box-shadow: var(--shadow-lg);
-}
-
-/* Pipeline node glow animation */
+/* ── Fit score ring animation ─────────────────────────────── */
 .node-running {
-  animation: pulse-glow 2s ease-in-out infinite;
-  border-color: var(--ai-accent) !important;
+  animation: pulse-ring 2s ease-in-out infinite;
+  border-color: var(--primary) !important;
 }
 
-/* Log terminal styles */
+/* ── Log terminal ─────────────────────────────────────────── */
 .log-terminal {
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
-  line-height: 1.6;
-  background: #1C1A18;
-  color: #9B8B78;
+  line-height: 1.7;
+  background: #0F172A;
+  color: #94A3B8;
 }
+.log-line-info    { color: #94A3B8; }
+.log-line-warn    { color: #F59E0B; }
+.log-line-success { color: #10B981; }
+.log-line-error   { color: #F87171; }
 
-.log-line-info { color: #9B8B78; }
-.log-line-warn { color: #E8A23A; }
-.log-line-success { color: #5B8B6E; }
-.log-line-error { color: #E85A4A; }
+/* ── Score bar gradient ───────────────────────────────────── */
+.score-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #0056D2, #3B82F6);
+}

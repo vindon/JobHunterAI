@@ -90,9 +90,15 @@ export interface SearchQuery {
 
 export interface Settings {
   search_queries: SearchQuery[]
-  ai_model: string
-  portals: Record<string, boolean>
-  min_fit_score: number
+  broad_search_queries: string[]
+  exclude_keywords: string[]
+  fit_score_threshold: number
+  max_results_per_query: number
+  days_back: number
+  ollama_model: string
+  target_countries: string[]
+  target_roles: string[]
+  min_seniority: string
 }
 
 export const JOB_STATUSES: JobStatus[] = [

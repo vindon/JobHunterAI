@@ -7,21 +7,18 @@ import {
   Play,
   Plus,
   X,
-  Eye,
-  EyeOff,
   ChevronDown,
   CheckCircle,
   AlertCircle,
   Loader2,
   ArrowDown,
   Terminal,
+  Check,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { getSettings, getActiveRun, startRun, addSearchQuery, deleteSearchQuery } from "@/lib/api"
 import { useSSE } from "@/lib/sse"
 import type { PipelineNode, Job } from "@/lib/types"
@@ -29,23 +26,17 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 const PIPELINE_NODES: Omit<PipelineNode, "status" | "count" | "detail">[] = [
-  { id: "supervisor", label: "Supervisor", icon: "🧠" },
-  { id: "search", label: "Search", icon: "🔍" },
-  { id: "parse", label: "Parse", icon: "📄" },
-  { id: "rank", label: "Rank", icon: "⭐" },
-  { id: "write", label: "Write", icon: "✍️" },
-  { id: "report", label: "Report", icon: "📊" },
+  { id: "supervisor", label: "Plan", icon: "1" },
+  { id: "search",     label: "Search", icon: "2" },
+  { id: "parse",      label: "Parse", icon: "3" },
+  { id: "rank",       label: "Rank", icon: "4" },
+  { id: "write",      label: "Write", icon: "5" },
+  { id: "report",     label: "Report", icon: "6" },
 ]
 
 type NodeStatus = "idle" | "running" | "complete" | "error"
+interface NodeState { status: NodeStatus; count?: number }
 
-interface NodeState {
-  status: NodeStatus
-  count?: number
-  detail?: string
-}
-
-// Detect node status from log line
 function detectNodeFromLog(line: string): { nodeId: string; status: NodeStatus; count?: number } | null {
   const lower = line.toLowerCase()
   for (const node of PIPELINE_NODES) {
@@ -53,8 +44,8 @@ function detectNodeFromLog(line: string): { nodeId: string; status: NodeStatus; 
     if (lower.includes(`[${id}]`) || lower.includes(`node: ${id}`) || lower.includes(`entering ${id}`)) {
       if (lower.includes("error") || lower.includes("failed")) return { nodeId: id, status: "error" }
       if (lower.includes("complete") || lower.includes("done") || lower.includes("finished")) {
-        const countMatch = line.match(/(\d+)\s*(results|jobs|found|parsed|written)/i)
-        return { nodeId: id, status: "complete", count: countMatch ? Number(countMatch[1]) : undefined }
+        const m = line.match(/(\d+)\s*(results|jobs|found|parsed|written)/i)
+        return { nodeId: id, status: "complete", count: m ? Number(m[1]) : undefined }
       }
       return { nodeId: id, status: "running" }
     }
@@ -62,94 +53,248 @@ function detectNodeFromLog(line: string): { nodeId: string; status: NodeStatus; 
   return null
 }
 
-function getLogLineClass(line: string): string {
-  if (line.includes("✅") || line.toLowerCase().includes("success") || line.toLowerCase().includes("complete")) {
-    return "log-line-success"
-  }
-  if (line.includes("❌") || line.toLowerCase().includes("error") || line.toLowerCase().includes("fail")) {
-    return "log-line-error"
-  }
-  if (line.includes("⚠") || line.toLowerCase().includes("warn") || line.toLowerCase().includes("skip")) {
-    return "log-line-warn"
-  }
+function getLogClass(line: string): string {
+  if (line.includes("✅") || /success|complete/i.test(line)) return "log-line-success"
+  if (line.includes("❌") || /error|fail/i.test(line)) return "log-line-error"
+  if (line.includes("⚠") || /warn|skip/i.test(line)) return "log-line-warn"
   return "log-line-info"
 }
 
-// --- Pipeline Visualiser Node ---
-function PipelineNodeCard({ node, nodeState }: { node: typeof PIPELINE_NODES[0]; nodeState: NodeState }) {
-  const { status, count } = nodeState
+// ── Pipeline step card ─────────────────────────────────────────────
+function StepCard({ node, state }: { node: typeof PIPELINE_NODES[0]; state: NodeState }) {
+  const { status, count } = state
+  const colors = {
+    idle:     { bg: "var(--surface)", border: "var(--border)", text: "var(--text-muted)" },
+    running:  { bg: "var(--primary-light)", border: "var(--primary)", text: "var(--primary)" },
+    complete: { bg: "var(--success-light)", border: "var(--success)", text: "var(--success)" },
+    error:    { bg: "#FEF2F2", border: "#FCA5A5", text: "#DC2626" },
+  }[status]
+
   return (
     <div
-      className={cn(
-        "flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-300 min-w-[100px]",
-        status === "idle" && "border-[var(--border)] bg-[var(--surface-warm)]",
-        status === "running" && "border-[var(--ai-accent)] bg-[var(--ai-light)] node-running",
-        status === "complete" && "border-[var(--success)] bg-[var(--success-light)]",
-        status === "error" && "border-red-300 bg-red-50"
-      )}
+      className="flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all duration-300"
+      style={{ background: colors.bg, borderColor: colors.border, minWidth: 76 }}
     >
-      <div className="text-2xl mb-2">{node.icon}</div>
-      <span
-        className="text-xs font-semibold text-center"
+      <div
+        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
         style={{
-          color:
-            status === "running"
-              ? "var(--ai-accent)"
-              : status === "complete"
-              ? "var(--success)"
-              : status === "error"
-              ? "#E85A4A"
-              : "var(--text-muted)",
+          background: status === "idle" ? "var(--border)" : colors.border,
+          color: status === "idle" ? "var(--text-muted)" : "#fff",
         }}
       >
-        {node.label}
-      </span>
-
-      <div className="mt-2 h-5 flex items-center justify-center">
-        {status === "running" && (
-          <Loader2 size={14} className="animate-spin" style={{ color: "var(--ai-accent)" }} />
-        )}
-        {status === "complete" && (
-          <CheckCircle size={14} style={{ color: "var(--success)" }} />
-        )}
-        {status === "error" && (
-          <AlertCircle size={14} style={{ color: "#E85A4A" }} />
+        {status === "running" ? (
+          <Loader2 size={12} className="animate-spin" />
+        ) : status === "complete" ? (
+          <Check size={12} />
+        ) : status === "error" ? (
+          <X size={12} />
+        ) : (
+          node.icon
         )}
       </div>
-
+      <span className="text-xs font-medium text-center leading-tight" style={{ color: colors.text }}>
+        {node.label}
+      </span>
       {count !== undefined && status === "complete" && (
-        <span
-          className="mt-1 text-xs font-bold px-2 py-0.5 rounded-full"
-          style={{ background: "var(--success-light)", color: "var(--success)" }}
-        >
-          {count}
-        </span>
+        <span className="text-[10px] font-bold" style={{ color: colors.text }}>{count}</span>
       )}
     </div>
   )
 }
 
-// --- Live Result Card ---
+// ── Query multi-select dropdown ────────────────────────────────────
+interface SearchQuery { query: string; enabled: boolean }
+
+function QueryPicker({
+  queries,
+  disabledIndices,
+  onToggle,
+  onToggleAll,
+  onAdd,
+  onDelete,
+}: {
+  queries: SearchQuery[]
+  disabledIndices: Set<number>
+  onToggle: (i: number) => void
+  onToggleAll: () => void
+  onAdd: (q: string) => void
+  onDelete: (i: number) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [newQ, setNewQ] = useState("")
+  const ref = useRef<HTMLDivElement>(null)
+  const enabledCount = queries.length - disabledIndices.size
+  const allEnabled = disabledIndices.size === 0
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handle)
+    return () => document.removeEventListener("mousedown", handle)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors"
+        style={{
+          background: "var(--surface)",
+          border: `1px solid ${open ? "var(--primary)" : "var(--border-strong)"}`,
+          color: "var(--text-primary)",
+        }}
+      >
+        <span className="font-medium">
+          {enabledCount === queries.length
+            ? `All ${queries.length} queries`
+            : `${enabledCount} of ${queries.length} queries`}
+        </span>
+        <ChevronDown
+          size={14}
+          className="transition-transform"
+          style={{
+            color: "var(--text-muted)",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </button>
+
+      {/* Dropdown panel */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 right-0 mt-1 rounded-lg overflow-hidden z-50"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border-strong)",
+              boxShadow: "var(--shadow-lg)",
+            }}
+          >
+            {/* Select all / clear */}
+            <div
+              className="flex items-center justify-between px-3 py-2 border-b"
+              style={{ borderColor: "var(--border)", background: "var(--surface-warm)" }}
+            >
+              <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                SEARCH QUERIES
+              </span>
+              <button
+                onClick={onToggleAll}
+                className="text-xs font-semibold"
+                style={{ color: "var(--primary)" }}
+              >
+                {allEnabled ? "Deselect all" : "Select all"}
+              </button>
+            </div>
+
+            {/* Query list */}
+            <div className="max-h-56 overflow-y-auto">
+              {queries.map((q, i) => {
+                const enabled = !disabledIndices.has(i)
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-[var(--surface-warm)] group cursor-pointer"
+                    onClick={() => onToggle(i)}
+                  >
+                    <div
+                      className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors"
+                      style={{
+                        background: enabled ? "var(--primary)" : "transparent",
+                        border: `1.5px solid ${enabled ? "var(--primary)" : "var(--border-strong)"}`,
+                      }}
+                    >
+                      {enabled && <Check size={10} color="#fff" />}
+                    </div>
+                    <span
+                      className="flex-1 text-xs truncate"
+                      style={{ color: enabled ? "var(--text-primary)" : "var(--text-muted)" }}
+                      title={q.query}
+                    >
+                      {q.query}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDelete(i) }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-opacity"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                )
+              })}
+              {queries.length === 0 && (
+                <p className="px-3 py-4 text-xs text-center" style={{ color: "var(--text-muted)" }}>
+                  No queries yet
+                </p>
+              )}
+            </div>
+
+            {/* Add query */}
+            <div
+              className="flex gap-2 p-2 border-t"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <input
+                className="flex-1 px-2.5 py-1.5 rounded-md text-xs outline-none"
+                style={{
+                  background: "var(--surface-warm)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-primary)",
+                }}
+                placeholder="Add a search query..."
+                value={newQ}
+                onChange={(e) => setNewQ(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newQ.trim()) {
+                    onAdd(newQ.trim())
+                    setNewQ("")
+                  }
+                }}
+              />
+              <button
+                className="px-2.5 py-1.5 rounded-md text-xs font-semibold text-white"
+                style={{ background: "var(--primary)" }}
+                onClick={() => { if (newQ.trim()) { onAdd(newQ.trim()); setNewQ("") } }}
+              >
+                <Plus size={12} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ── Live result card ───────────────────────────────────────────────
 function LiveResultCard({ job }: { job: Job }) {
-  const scoreColor = job.fit_score >= 8 ? "var(--primary)" : job.fit_score >= 6 ? "var(--success)" : "var(--warning)"
+  const score = job.fit_score
+  const scoreColor = score >= 8 ? "var(--primary)" : score >= 6 ? "var(--success)" : "var(--warning)"
   return (
     <motion.div
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
       className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
       style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
     >
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
+        className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-bold text-white shrink-0"
         style={{ background: scoreColor }}
       >
-        {job.fit_score}
+        {score}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold truncate" style={{ color: "var(--text-primary)" }}>
           {job.role}
         </p>
-        <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
+        <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>
           {job.company} · {job.country}
         </p>
       </div>
@@ -157,14 +302,14 @@ function LiveResultCard({ job }: { job: Job }) {
   )
 }
 
+// ── Main page ──────────────────────────────────────────────────────
 export default function RunAgentPage() {
   const queryClient = useQueryClient()
   const [dryRun, setDryRun] = useState(false)
-  const [newQuery, setNewQuery] = useState("")
-  const [disabledQueryIndices, setDisabledQueryIndices] = useState<Set<number>>(new Set())
+  const [disabledIndices, setDisabledIndices] = useState<Set<number>>(new Set())
   const [runId, setRunId] = useState<string | null>(null)
   const [nodeStates, setNodeStates] = useState<Record<string, NodeState>>(
-    PIPELINE_NODES.reduce((acc, n) => ({ ...acc, [n.id]: { status: "idle" } }), {})
+    PIPELINE_NODES.reduce((acc, n) => ({ ...acc, [n.id]: { status: "idle" as NodeStatus } }), {})
   )
   const [isAtBottom, setIsAtBottom] = useState(true)
   const logRef = useRef<HTMLDivElement>(null)
@@ -185,62 +330,47 @@ export default function RunAgentPage() {
   const logs = events.filter((e) => e.type === "log").map((e) => e.payload as string)
   const liveJobs = events.filter((e) => e.type === "job").map((e) => e.payload as Job)
   const isComplete = events.some((e) => e.type === "complete")
-  const hasError = events.some((e) => e.type === "error")
 
-  // Update node states from logs
   useEffect(() => {
     logs.forEach((line) => {
       const detected = detectNodeFromLog(line)
-      if (detected) {
-        setNodeStates((prev) => {
-          const updated = { ...prev }
-          // Mark previous nodes complete if current one starts
-          if (detected.status === "running") {
-            const nodeIds = PIPELINE_NODES.map((n) => n.id)
-            const idx = nodeIds.indexOf(detected.nodeId)
-            nodeIds.slice(0, idx).forEach((id) => {
-              if (updated[id].status === "running") {
-                updated[id] = { ...updated[id], status: "complete" }
-              }
-            })
-          }
-          updated[detected.nodeId] = {
-            status: detected.status,
-            count: detected.count ?? updated[detected.nodeId].count,
-          }
-          return updated
-        })
-      }
+      if (!detected) return
+      setNodeStates((prev) => {
+        const updated = { ...prev }
+        if (detected.status === "running") {
+          const ids = PIPELINE_NODES.map((n) => n.id)
+          ids.slice(0, ids.indexOf(detected.nodeId)).forEach((id) => {
+            if (updated[id].status === "running") updated[id] = { ...updated[id], status: "complete" }
+          })
+        }
+        updated[detected.nodeId] = { status: detected.status, count: detected.count ?? updated[detected.nodeId].count }
+        return updated
+      })
     })
   }, [logs])
 
-  // Mark all complete when run finishes
   useEffect(() => {
     if (isComplete) {
       setNodeStates((prev) =>
         PIPELINE_NODES.reduce(
-          (acc, n) => ({
-            ...acc,
-            [n.id]: { ...prev[n.id], status: prev[n.id].status === "error" ? "error" : "complete" },
-          }),
+          (acc, n) => ({ ...acc, [n.id]: { ...prev[n.id], status: prev[n.id].status === "error" ? "error" : "complete" } }),
           {} as Record<string, NodeState>
         )
       )
       queryClient.invalidateQueries({ queryKey: ["jobs"] })
       queryClient.invalidateQueries({ queryKey: ["job-stats"] })
       queryClient.invalidateQueries({ queryKey: ["run-history"] })
-      toast.success("Agent run complete!")
+      toast.success("Run complete — new jobs added to board.")
     }
   }, [isComplete, queryClient])
 
-  // Auto-scroll log
   useEffect(() => {
     if (isAtBottom && logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight
     }
   }, [logs, isAtBottom])
 
-  const handleLogScroll = useCallback(() => {
+  const handleScroll = useCallback(() => {
     if (!logRef.current) return
     const { scrollTop, scrollHeight, clientHeight } = logRef.current
     setIsAtBottom(scrollHeight - scrollTop - clientHeight < 40)
@@ -248,11 +378,7 @@ export default function RunAgentPage() {
 
   const addQueryMutation = useMutation({
     mutationFn: addSearchQuery,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["settings"] })
-      setNewQuery("")
-      toast.success("Query added")
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["settings"] }); toast.success("Query added") },
   })
 
   const deleteQueryMutation = useMutation({
@@ -262,204 +388,136 @@ export default function RunAgentPage() {
 
   const startMutation = useMutation({
     mutationFn: () => {
-      const enabledQueries = settings?.search_queries
-        .filter((_, i) => !disabledQueryIndices.has(i))
+      const enabledQueries = (settings?.search_queries ?? [])
+        .filter((_, i) => !disabledIndices.has(i))
         .map((q) => q.query)
-      return startRun({ dry_run: dryRun, queries: enabledQueries })
+      return startRun({ dry_run: dryRun, queries_override: enabledQueries })
     },
     onSuccess: (run) => {
       setRunId(run.run_id)
       clearEvents()
-      setNodeStates(PIPELINE_NODES.reduce((acc, n) => ({ ...acc, [n.id]: { status: "idle" } }), {}))
-      toast.success("Agent launched!")
+      setNodeStates(PIPELINE_NODES.reduce((acc, n) => ({ ...acc, [n.id]: { status: "idle" as NodeStatus } }), {}))
+      toast.success("Agent launched")
     },
-    onError: (err: Error) => {
-      toast.error(err.message)
-    },
+    onError: (err: Error) => toast.error(err.message),
   })
 
-  const isRunning = isConnected || activeRun?.status === "running"
+  const isRunning = isConnected || activeRun?.active === true
   const queries = settings?.search_queries ?? []
 
-  function toggleQuery(idx: number) {
-    setDisabledQueryIndices((prev) => {
-      const next = new Set(prev)
-      if (next.has(idx)) next.delete(idx)
-      else next.add(idx)
-      return next
-    })
+  function toggleQuery(i: number) {
+    setDisabledIndices((prev) => { const next = new Set(prev); next.has(i) ? next.delete(i) : next.add(i); return next })
+  }
+  function toggleAll() {
+    setDisabledIndices((prev) => prev.size === 0 ? new Set(queries.map((_, i) => i)) : new Set())
   }
 
   return (
-    <div className="flex h-full">
-      {/* Left panel: Config */}
+    <div className="flex" style={{ height: "calc(100vh - var(--nav-h))" }}>
+
+      {/* ── Left config panel ─────────────────────────────── */}
       <div
-        className="w-80 shrink-0 flex flex-col h-full overflow-y-auto"
+        className="w-72 shrink-0 flex flex-col overflow-y-auto"
         style={{ borderRight: "1px solid var(--border)", background: "var(--surface)" }}
       >
-        <div className="p-5">
-          <h3 className="font-display text-base mb-1" style={{ color: "var(--text-primary)", fontWeight: 700 }}>
-            Launch Configuration
-          </h3>
-          <p className="text-xs mb-5" style={{ color: "var(--text-muted)" }}>
-            Configure and launch the job search agent
-          </p>
+        <div className="p-5 space-y-5">
+          <div>
+            <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              Run Configuration
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+              Customise then launch the agent
+            </p>
+          </div>
 
-          {/* Dry run toggle */}
+          {/* Dry run */}
           <div
-            className="flex items-center justify-between p-3.5 rounded-xl mb-5"
+            className="flex items-center justify-between px-3 py-3 rounded-lg"
             style={{ background: "var(--surface-warm)", border: "1px solid var(--border)" }}
           >
             <div>
-              <Label className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                Dry Run
+              <Label className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                Dry run
               </Label>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Find jobs but don&apos;t save to DB
+                Search only — don&apos;t save results
               </p>
             </div>
-            <Switch
-              checked={dryRun}
-              onCheckedChange={setDryRun}
-              style={{ accentColor: "var(--primary)" }}
-            />
+            <Switch checked={dryRun} onCheckedChange={setDryRun} />
           </div>
 
-          {/* Search queries */}
-          <div className="mb-5">
-            <p className="text-xs font-semibold mb-2.5" style={{ color: "var(--text-muted)" }}>
-              SEARCH QUERIES ({queries.filter((_, i) => !disabledQueryIndices.has(i)).length}/{queries.length} enabled)
+          {/* Query picker */}
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>
+              ACTIVE QUERIES
             </p>
-
             {settingsLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-9 w-full rounded-lg" />
-                ))}
-              </div>
+              <div className="h-10 rounded-lg animate-pulse" style={{ background: "var(--border)" }} />
             ) : (
-              <div className="space-y-2">
-                {queries.map((q, i) => {
-                  const enabled = !disabledQueryIndices.has(i)
-                  return (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
-                      style={{
-                        background: enabled ? "var(--primary-light)" : "var(--surface-warm)",
-                        border: `1px solid ${enabled ? "#f0c5b0" : "var(--border)"}`,
-                        opacity: enabled ? 1 : 0.6,
-                      }}
-                    >
-                      <span className="flex-1 text-xs truncate" style={{ color: "var(--text-primary)" }}>
-                        {q.query}
-                      </span>
-                      <button onClick={() => toggleQuery(i)} style={{ color: "var(--text-muted)" }}>
-                        {enabled ? <Eye size={13} /> : <EyeOff size={13} />}
-                      </button>
-                      <button
-                        onClick={() => deleteQueryMutation.mutate(i)}
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        <X size={13} />
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Add query */}
-            <div className="flex gap-2 mt-3">
-              <Input
-                placeholder="Add search query..."
-                value={newQuery}
-                onChange={(e) => setNewQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newQuery.trim()) {
-                    addQueryMutation.mutate(newQuery.trim())
-                  }
-                }}
-                className="flex-1 h-8 text-xs"
-                style={{ borderColor: "var(--border)", background: "var(--surface-warm)" }}
+              <QueryPicker
+                queries={queries}
+                disabledIndices={disabledIndices}
+                onToggle={toggleQuery}
+                onToggleAll={toggleAll}
+                onAdd={(q) => addQueryMutation.mutate(q)}
+                onDelete={(i) => deleteQueryMutation.mutate(i)}
               />
-              <Button
-                size="sm"
-                className="h-8 px-3"
-                onClick={() => newQuery.trim() && addQueryMutation.mutate(newQuery.trim())}
-                style={{ background: "var(--primary)", color: "#fff" }}
-              >
-                <Plus size={13} />
-              </Button>
-            </div>
+            )}
           </div>
 
-          {/* Estimated time */}
+          {/* Estimate */}
           <div
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-5"
-            style={{ background: "var(--ai-light)", border: "1px solid #d4c8f0" }}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs"
+            style={{ background: "var(--primary-light)", color: "var(--primary)", border: "1px solid var(--primary-border)" }}
           >
-            <span className="text-sm">⏱️</span>
-            <span className="text-xs font-medium" style={{ color: "var(--ai-accent)" }}>
-              Estimated runtime: ~6 min
-            </span>
+            <span className="font-medium">Est. ~6 min</span>
+            <span style={{ color: "var(--text-muted)" }}>across {queries.length - disabledIndices.size} queries</span>
           </div>
 
-          {/* Launch button */}
-          <Button
+          {/* Launch */}
+          <button
             onClick={() => startMutation.mutate()}
             disabled={isRunning || startMutation.isPending}
-            className="w-full gap-2 font-semibold py-6 text-base"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition-all"
             style={{
-              background: isRunning ? "var(--border)" : "var(--primary)",
+              background: isRunning ? "var(--border-strong)" : "var(--primary)",
               color: isRunning ? "var(--text-muted)" : "#fff",
               cursor: isRunning ? "not-allowed" : "pointer",
             }}
           >
             {isRunning ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Agent Running...
-              </>
+              <><Loader2 size={16} className="animate-spin" />Running...</>
             ) : (
-              <>
-                <Play size={18} />
-                Launch Search
-              </>
+              <><Play size={16} />Launch Search</>
             )}
-          </Button>
-
+          </button>
           {isRunning && (
-            <p className="text-xs text-center mt-2" style={{ color: "var(--text-muted)" }}>
+            <p className="text-xs text-center -mt-3" style={{ color: "var(--text-muted)" }}>
               {isConnected ? "Streaming live results..." : "Connecting..."}
             </p>
           )}
         </div>
       </div>
 
-      {/* Centre: Pipeline + Logs */}
+      {/* ── Centre: pipeline + log ─────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Pipeline */}
+
+        {/* Pipeline steps */}
         <div
-          className="p-5 shrink-0"
+          className="px-5 py-4 shrink-0"
           style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)" }}
         >
-          <h3 className="font-display text-sm mb-4" style={{ color: "var(--text-muted)", fontWeight: 600, letterSpacing: "0.05em" }}>
+          <p className="text-[11px] font-semibold mb-3 tracking-wider" style={{ color: "var(--text-muted)" }}>
             PIPELINE
-          </h3>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          </p>
+          <div className="flex items-center gap-1.5">
             {PIPELINE_NODES.map((node, idx) => (
-              <div key={node.id} className="flex items-center gap-2 shrink-0">
-                <PipelineNodeCard node={node} nodeState={nodeStates[node.id]} />
+              <div key={node.id} className="flex items-center gap-1.5 shrink-0">
+                <StepCard node={node} state={nodeStates[node.id]} />
                 {idx < PIPELINE_NODES.length - 1 && (
                   <div
-                    className="w-6 h-0.5 shrink-0 rounded-full transition-all duration-500"
-                    style={{
-                      background:
-                        nodeStates[node.id].status === "complete"
-                          ? "var(--success)"
-                          : "var(--border)",
-                    }}
+                    className="w-5 h-px rounded-full transition-all duration-500"
+                    style={{ background: nodeStates[node.id].status === "complete" ? "var(--success)" : "var(--border-strong)" }}
                   />
                 )}
               </div>
@@ -467,81 +525,58 @@ export default function RunAgentPage() {
           </div>
         </div>
 
-        {/* Live Log */}
+        {/* Log terminal */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div
             className="flex items-center justify-between px-4 py-2 shrink-0"
-            style={{ borderBottom: "1px solid #2d2b28", background: "#1C1A18" }}
+            style={{ borderBottom: "1px solid #1E293B", background: "#0F172A" }}
           >
             <div className="flex items-center gap-2">
-              <Terminal size={13} style={{ color: "#9B8B78" }} />
-              <span className="text-xs font-mono" style={{ color: "#9B8B78" }}>
-                live log
-              </span>
+              <Terminal size={12} style={{ color: "#475569" }} />
+              <span className="text-[11px] font-mono" style={{ color: "#64748B" }}>live log</span>
               {isConnected && (
-                <span
-                  className="text-xs px-1.5 py-0.5 rounded-md font-mono"
-                  style={{ background: "#2D4A3A", color: "#5B8B6E" }}
-                >
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: "#052e16", color: "#4ade80" }}>
                   ● streaming
                 </span>
               )}
               {isComplete && (
-                <span
-                  className="text-xs px-1.5 py-0.5 rounded-md font-mono"
-                  style={{ background: "#3A2D2D", color: "#5B8B6E" }}
-                >
-                  ✅ complete
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: "#052e16", color: "#4ade80" }}>
+                  ✓ complete
                 </span>
               )}
             </div>
             {!isAtBottom && (
               <button
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded-md"
-                style={{ background: "#2d2b28", color: "#9B8B78" }}
-                onClick={() => {
-                  if (logRef.current) {
-                    logRef.current.scrollTop = logRef.current.scrollHeight
-                    setIsAtBottom(true)
-                  }
-                }}
+                className="flex items-center gap-1 text-[11px] px-2 py-1 rounded"
+                style={{ background: "#1E293B", color: "#64748B" }}
+                onClick={() => { if (logRef.current) { logRef.current.scrollTop = logRef.current.scrollHeight; setIsAtBottom(true) } }}
               >
-                <ArrowDown size={11} />
-                Jump to bottom
+                <ArrowDown size={10} />Jump to bottom
               </button>
             )}
           </div>
-
-          <div
-            ref={logRef}
-            className="flex-1 overflow-y-auto p-4 log-terminal"
-            onScroll={handleLogScroll}
-          >
+          <div ref={logRef} className="flex-1 overflow-y-auto p-4 log-terminal" onScroll={handleScroll}>
             {logs.length === 0 ? (
               <p className="log-line-info text-xs">
-                {isRunning ? "Waiting for output..." : "Launch the agent to see live logs here."}
+                {isRunning ? "Waiting for output..." : "Launch the agent to see live output here."}
               </p>
             ) : (
               logs.map((line, i) => (
-                <div key={i} className={cn("text-xs mb-0.5", getLogLineClass(line))}>
-                  {line}
-                </div>
+                <div key={i} className={cn("text-xs mb-0.5", getLogClass(line))}>{line}</div>
               ))
             )}
           </div>
         </div>
       </div>
 
-      {/* Right panel: Live Results */}
+      {/* ── Right: live matches ────────────────────────────── */}
       <div
-        className="w-72 shrink-0 flex flex-col h-full overflow-hidden"
+        className="w-64 shrink-0 flex flex-col overflow-hidden"
         style={{ borderLeft: "1px solid var(--border)", background: "var(--surface)" }}
       >
-        <div className="px-4 py-3.5 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
-          <div className="flex items-center gap-2">
-            <h3 className="font-display text-sm" style={{ color: "var(--text-primary)", fontWeight: 700 }}>
-              Matches Found
-            </h3>
+        <div className="px-4 py-3 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Matches</span>
             {liveJobs.length > 0 && (
               <span
                 className="text-xs px-2 py-0.5 rounded-full font-bold"
@@ -551,25 +586,21 @@ export default function RunAgentPage() {
               </span>
             )}
           </div>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Results appear in real-time
+          <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+            Real-time results
           </p>
         </div>
-
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           <AnimatePresence>
             {liveJobs.length === 0 ? (
-              <div className="py-12 text-center">
-                <div className="text-3xl mb-2">🎯</div>
+              <div className="py-16 text-center">
+                <CheckCircle size={28} className="mx-auto mb-2 opacity-20" style={{ color: "var(--text-muted)" }} />
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  {isRunning ? "Searching for matches..." : "Start a run to see results"}
+                  {isRunning ? "Searching..." : "Results appear here"}
                 </p>
               </div>
             ) : (
-              liveJobs
-                .slice()
-                .reverse()
-                .map((job) => <LiveResultCard key={job.id} job={job} />)
+              liveJobs.slice().reverse().map((job) => <LiveResultCard key={job.id} job={job} />)
             )}
           </AnimatePresence>
         </div>

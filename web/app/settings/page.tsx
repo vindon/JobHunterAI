@@ -31,7 +31,10 @@ import {
   deleteSearchQuery,
   exportJobsCsv,
   clearAllJobs,
+  getPortals,
+  updatePortals,
 } from "@/lib/api"
+import type { Portal } from "@/lib/api"
 import type { Settings } from "@/lib/types"
 import { toast } from "sonner"
 import { format } from "date-fns"
@@ -141,6 +144,11 @@ export default function SettingsPage() {
     queryFn: getSettings,
   })
 
+  const { data: portals } = useQuery({
+    queryKey: ["portals"],
+    queryFn: getPortals,
+  })
+
   const updateMutation = useMutation({
     mutationFn: updateSettings,
     onSuccess: () => {
@@ -176,15 +184,18 @@ export default function SettingsPage() {
     onError: (err: Error) => toast.error(err.message),
   })
 
-  function handlePortalToggle(portalId: string, enabled: boolean) {
-    if (!settings) return
-    updateMutation.mutate({
-      portals: { ...settings.portals, [portalId]: enabled },
-    })
+  const portalMutation = useMutation({
+    mutationFn: (payload: Record<string, boolean>) => updatePortals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["portals"] }),
+    onError: (err: Error) => toast.error(err.message),
+  })
+
+  function handlePortalToggle(portalName: string, enabled: boolean) {
+    portalMutation.mutate({ [portalName]: enabled })
   }
 
   function handleModelChange(modelId: string) {
-    updateMutation.mutate({ ai_model: modelId })
+    updateMutation.mutate({ ollama_model: modelId })
   }
 
   async function handleExport() {
@@ -341,7 +352,7 @@ export default function SettingsPage() {
 
               <div className="space-y-3">
                 {AI_MODELS.map((model) => {
-                  const selected = settings?.ai_model === model.id
+                  const selected = settings?.ollama_model === model.id
                   return (
                     <button
                       key={model.id}
@@ -400,24 +411,24 @@ export default function SettingsPage() {
               </p>
 
               <div className="space-y-2">
-                {PORTALS.map((portal) => {
-                  const enabled = settings?.portals?.[portal.id] ?? true
+                {(portals ?? PORTALS.map((p) => ({ name: p.id, enabled: true }))).map((portal) => {
+                  const meta = PORTALS.find((p) => portal.name.includes(p.id)) ?? { icon: "🔗", name: portal.name }
                   return (
                     <div
-                      key={portal.id}
+                      key={portal.name}
                       className="flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all"
                       style={{
-                        background: enabled ? "var(--primary-light)" : "var(--surface-warm)",
-                        border: `1px solid ${enabled ? "#f0c5b0" : "var(--border)"}`,
+                        background: portal.enabled ? "var(--primary-light)" : "var(--surface-warm)",
+                        border: `1px solid ${portal.enabled ? "#f0c5b0" : "var(--border)"}`,
                       }}
                     >
-                      <span className="text-lg shrink-0">{portal.icon}</span>
+                      <span className="text-lg shrink-0">{meta.icon}</span>
                       <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                         {portal.name}
                       </span>
                       <Switch
-                        checked={enabled}
-                        onCheckedChange={(v) => handlePortalToggle(portal.id, v)}
+                        checked={portal.enabled}
+                        onCheckedChange={(v) => handlePortalToggle(portal.name, v)}
                       />
                     </div>
                   )
