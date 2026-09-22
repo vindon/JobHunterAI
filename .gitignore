@@ -35,3 +35,7 @@ web/.env.local
 
 # Misc
 *.log
+
+# Local Claude Code / worktree state
+.claude/
+.worktrees/
