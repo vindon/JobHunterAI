@@ -143,14 +143,26 @@ async def stream_run(run_id: str):
 # ══════════════════════════════════════════════════════════════════
 
 
-@router.get("/history", response_model=list[RunRecord])
+@router.get("/history")
 async def list_run_history(
     session: Session = Depends(get_session),
-) -> list[RunRecord]:
+) -> list[dict]:
     """Return all RunRecord rows sorted by created_at descending (newest first)."""
+    import json as _json
+
     try:
         records = session.exec(select(RunRecord)).all()
-        return sorted(records, key=lambda r: r.created_at, reverse=True)
+        records = sorted(records, key=lambda r: r.created_at, reverse=True)
+        result = []
+        for r in records:
+            d = r.model_dump()
+            # top_jobs is stored as a JSON string — decode it for the frontend
+            try:
+                d["top_jobs"] = _json.loads(r.top_jobs) if isinstance(r.top_jobs, str) else r.top_jobs
+            except Exception:
+                d["top_jobs"] = []
+            result.append(d)
+        return result
     except Exception as exc:
         log.error(f"Error fetching run history: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch run history")

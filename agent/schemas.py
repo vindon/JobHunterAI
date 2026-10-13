@@ -113,9 +113,24 @@ class JobListing(BaseModel):
     @field_validator("link", mode="before")
     @classmethod
     def normalise_link(cls, v: str) -> str:
+        import re as _re
         v = str(v).strip()
         if not v.startswith(("http://", "https://")):
             v = "https://" + v
+        # Reject search-results pages — they break the "open original listing" goal
+        _search_page = _re.compile(
+            r'/q[-_].{3,}[-_]jobs\.html'   # Indeed: /q-ai-strategy-l-remote-jobs.html
+            r'|[?&]q='                       # generic: ?q=
+            r'|/jobs/search'                 # generic search path
+            r'|/skill/'                      # DynamiteJobs skill pages
+            r'|/jobs\.html\b'               # bare jobs.html
+            r'|/jobs/category',              # category listings
+            _re.I,
+        )
+        if _search_page.search(v):
+            raise ValueError(
+                f"URL appears to be a search/category page, not a direct job listing: {v!r}"
+            )
         return v
 
     @field_validator("fit_score", mode="before")

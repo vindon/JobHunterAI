@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
-import { X, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,8 +32,8 @@ const SENIORITY_LEVELS = [
 const PRESET_COUNTRIES: { code: string; name: string; flag: string }[] = [
   { code: "AU", name: "Australia", flag: "🇦🇺" },
   { code: "NZ", name: "New Zealand", flag: "🇳🇿" },
-  { code: "GB", name: "United Kingdom", flag: "🇬🇧" },
-  { code: "US", name: "United States", flag: "🇺🇸" },
+  { code: "GB", name: "UK", flag: "🇬🇧" },
+  { code: "US", name: "USA", flag: "🇺🇸" },
   { code: "CA", name: "Canada", flag: "🇨🇦" },
   { code: "IN", name: "India", flag: "🇮🇳" },
   { code: "DE", name: "Germany", flag: "🇩🇪" },
@@ -79,11 +78,11 @@ function TagInput({
           <span
             key={tag}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
-            style={{ background: "var(--primary-light)", color: "var(--primary)", border: "1px solid #f0c5b0" }}
+            style={{ background: "var(--primary-light)", color: "var(--primary)", border: "1px solid var(--primary)" }}
           >
             {tag}
-            <button onClick={() => removeTag(tag)} className="opacity-60 hover:opacity-100 transition-opacity">
-              <X size={11} />
+            <button onClick={() => removeTag(tag)} className="opacity-50 hover:opacity-100 transition-opacity text-[11px] leading-none">
+              ×
             </button>
           </span>
         ))}
@@ -343,7 +342,7 @@ export default function ProfilePage() {
             style={{
               background: "var(--primary-light)",
               color: "var(--text-secondary)",
-              border: "1px solid #f0c5b0",
+              border: "1px solid var(--border)",
             }}
           >
             {SCORE_DESCRIPTIONS[form.fit_score_threshold] ?? ""}

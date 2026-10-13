@@ -5,8 +5,10 @@ Prefix: /api/jobs
 
 Endpoints
 ---------
-  GET    /             List jobs with filtering, sorting, search
+  GET    /             List jobs with filtering, sorting, search, pagination
   GET    /stats        Aggregate counts by status, country, score bucket
+  GET    /export       Download all jobs as CSV
+  DELETE /all          Permanently delete every job
   GET    /{id}         Single job by primary key
   PATCH  /{id}         Update status and/or notes
   DELETE /{id}         Soft-delete (set status to ❌ Pass) or hard-delete
@@ -14,10 +16,13 @@ Endpoints
 
 from __future__ import annotations
 
+import csv
+import io
 import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -43,7 +48,7 @@ class JobUpdate(BaseModel):
 # ══════════════════════════════════════════════════════════════════
 
 
-@router.get("/", response_model=list[Job])
+@router.get("/")
 async def list_jobs(
     status: Optional[str] = Query(None, description="Filter by status string"),
     country: Optional[str] = Query(None, description="Filter by country (case-insensitive)"),
@@ -51,9 +56,12 @@ async def list_jobs(
     max_score: Optional[int] = Query(None, ge=0, le=10, description="Maximum fit score (inclusive)"),
     search: Optional[str] = Query(None, description="Search text across role, company, fit_notes"),
     sort_by: Optional[str] = Query("fit_score", description="Field name to sort by"),
-    sort_dir: Optional[str] = Query("desc", regex="^(asc|desc)$", description="Sort direction"),
+    sort_dir: Optional[str] = Query("desc", pattern="^(asc|desc)$", description="Sort direction"),
+    sort: Optional[str] = Query(None, description="Shorthand sort e.g. fit_score_desc"),
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(50, ge=1, le=200, description="Results per page"),
     session: Session = Depends(get_session),
-) -> list[Job]:
+) -> dict:
     """
     Return all jobs matching the given filters.
 
@@ -94,8 +102,16 @@ async def list_jobs(
             "id", "role", "company", "country", "fit_score",
             "date_found", "status", "urgency", "created_at",
         }
-        sort_field = sort_by if sort_by in VALID_SORT_FIELDS else "fit_score"
-        reverse = sort_dir != "asc"
+        # Support shorthand "fit_score_desc" style from frontend
+        effective_sort_by = sort_by
+        effective_sort_dir = sort_dir
+        if sort:
+            parts = sort.rsplit("_", 1)
+            if len(parts) == 2 and parts[1] in ("asc", "desc"):
+                effective_sort_by, effective_sort_dir = parts[0], parts[1]
+
+        sort_field = effective_sort_by if effective_sort_by in VALID_SORT_FIELDS else "fit_score"
+        reverse = effective_sort_dir != "asc"
 
         jobs = sorted(
             jobs,
@@ -103,7 +119,19 @@ async def list_jobs(
             reverse=reverse,
         )
 
-        return jobs
+        # ── Pagination ────────────────────────────────────────────────────────
+        total = len(jobs)
+        total_pages = max(1, (total + per_page - 1) // per_page)
+        offset = (page - 1) * per_page
+        page_jobs = jobs[offset: offset + per_page]
+
+        return {
+            "jobs": [j.model_dump() for j in page_jobs],
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": total_pages,
+        }
 
     except Exception as exc:
         log.error(f"Error listing jobs: {exc}", exc_info=True)
@@ -167,6 +195,56 @@ async def get_stats(session: Session = Depends(get_session)) -> dict:
     except Exception as exc:
         log.error(f"Error computing stats: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to compute stats")
+
+
+# ══════════════════════════════════════════════════════════════════
+# GET /export
+# ══════════════════════════════════════════════════════════════════
+
+
+@router.get("/export")
+async def export_jobs_csv(session: Session = Depends(get_session)) -> StreamingResponse:
+    """Export all jobs as a UTF-8 CSV file."""
+    try:
+        jobs = session.exec(select(Job)).all()
+        output = io.StringIO()
+        writer = csv.writer(output)
+        fields = ["id", "role", "company", "country", "job_type", "remote_scope",
+                  "source_portal", "date_found", "urgency", "fit_score", "status",
+                  "salary_hint", "fit_notes", "direct_link", "notes", "created_at"]
+        writer.writerow(fields)
+        for job in jobs:
+            writer.writerow([getattr(job, f, "") for f in fields])
+        output.seek(0)
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=jobhunter-export.csv"},
+        )
+    except Exception as exc:
+        log.error(f"Error exporting jobs: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Export failed")
+
+
+# ══════════════════════════════════════════════════════════════════
+# DELETE /all
+# ══════════════════════════════════════════════════════════════════
+
+
+@router.delete("/all")
+async def delete_all_jobs(session: Session = Depends(get_session)) -> dict:
+    """Permanently delete every job record in the database."""
+    try:
+        jobs = session.exec(select(Job)).all()
+        count = len(jobs)
+        for job in jobs:
+            session.delete(job)
+        session.commit()
+        log.warning(f"All {count} jobs permanently deleted")
+        return {"deleted": count}
+    except Exception as exc:
+        log.error(f"Error deleting all jobs: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to delete all jobs")
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -268,3 +346,5 @@ async def delete_job(
     except Exception as exc:
         log.error(f"Error deleting job {job_id}: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to delete job")
+
+

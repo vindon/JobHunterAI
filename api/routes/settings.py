@@ -84,14 +84,22 @@ def _write_profile(data: dict) -> None:
 
 def _profile_to_settings(profile: dict) -> dict:
     """Extract the structured settings subset from a full profile dict."""
+    raw_queries = profile.get("search_queries", [])
+    # Normalise to {query, enabled} objects regardless of stored format
+    queries = []
+    for q in raw_queries:
+        if isinstance(q, dict):
+            queries.append({"query": q.get("query", ""), "enabled": q.get("enabled", True)})
+        else:
+            queries.append({"query": str(q), "enabled": True})
     return {
-        "search_queries": profile.get("search_queries", []),
+        "search_queries": queries,
         "broad_search_queries": profile.get("broad_search_queries", []),
         "exclude_keywords": profile.get("exclude_keywords", []),
         "fit_score_threshold": profile.get("fit_score_threshold", 5),
         "max_results_per_query": profile.get("max_results_per_query", 5),
         "days_back": profile.get("days_back", 7),
-        "ollama_model": profile.get("ollama_model", "qwen3:8b"),
+        "ollama_model": profile.get("ollama_model", "mistral:7b"),
         "target_countries": profile.get("target_countries", []),
         "target_roles": profile.get("target_roles", []),
         "min_seniority": profile.get("min_seniority", "Senior Manager"),
@@ -103,7 +111,7 @@ def _profile_to_settings(profile: dict) -> dict:
 class SettingsUpdate(BaseModel):
     """Partial settings update — all fields optional."""
 
-    search_queries: Optional[list[str]] = None
+    search_queries: Optional[list] = None  # accepts str or {query,enabled} objects
     broad_search_queries: Optional[list[str]] = None
     exclude_keywords: Optional[list[str]] = None
     fit_score_threshold: Optional[int] = None
@@ -176,6 +184,15 @@ async def update_settings(body: SettingsUpdate) -> JSONResponse:
     try:
         profile = _read_profile()
         updates = body.model_dump(exclude_none=True)
+        # Normalise search_queries: store as plain strings in profile.json
+        if "search_queries" in updates:
+            normalised = []
+            for q in updates["search_queries"]:
+                if isinstance(q, dict):
+                    normalised.append(q.get("query", ""))
+                else:
+                    normalised.append(str(q))
+            updates["search_queries"] = normalised
         profile.update(updates)
         _write_profile(profile)
         log.info(f"Settings updated: {list(updates.keys())}")

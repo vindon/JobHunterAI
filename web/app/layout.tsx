@@ -1,14 +1,13 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { Providers } from "@/lib/providers"
-import { Sidebar } from "@/components/layout/Sidebar"
-import { TopBar } from "@/components/layout/TopBar"
+import { NavBar } from "@/components/layout/NavBar"
 import { Toaster } from "@/components/ui/sonner"
 
 export const metadata: Metadata = {
-  title: "JobHunter AI — Find Remote Work",
+  title: "JobHunterAI — Remote AI Jobs",
   description:
-    "Autonomous AI agent that finds and tracks remote job opportunities worldwide.",
+    "Autonomous AI agent that finds and tracks remote jobs worldwide. Built by Vinoth Nataraj.",
 }
 
 export default function RootLayout({
@@ -20,18 +19,13 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className="h-full antialiased" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
         <Providers>
-          <div className="flex h-full">
-            {/* Sidebar */}
-            <Sidebar />
-
-            {/* Main content */}
-            <div className="flex flex-col min-h-full" style={{ marginLeft: 240, flex: 1 }}>
-              <TopBar />
-              <main className="flex-1 overflow-auto" style={{ background: "var(--background)" }}>
-                {children}
-              </main>
-            </div>
-          </div>
+          <NavBar />
+          <main
+            className="min-h-full"
+            style={{ paddingTop: "var(--nav-h)", background: "var(--background)" }}
+          >
+            {children}
+          </main>
           <Toaster
             position="bottom-right"
             toastOptions={{
@@ -40,6 +34,7 @@ export default function RootLayout({
                 color: "var(--text-primary)",
                 border: "1px solid var(--border)",
                 boxShadow: "var(--shadow-md)",
+                fontSize: "13px",
               },
             }}
           />
